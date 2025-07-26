@@ -58,21 +58,61 @@ class SubCategoriesModel(models.Model):
 class Products(models.Model):
     productName = models.CharField(max_length=100, blank=False)
     description = models.TextField(blank=False)
-    keyFeatures = ArrayField(models.CharField(max_length=50), blank=True, default=list)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    material = ArrayField(models.CharField(max_length=50), blank=True, default=list)
     SKU = models.CharField(max_length=50, unique=True, blank=True)
-    subCategories = models.ForeignKey(SubCategoriesModel, on_delete=models.CASCADE, related_name='products')
+    subCategories = models.ForeignKey('SubCategoriesModel', on_delete=models.CASCADE, related_name='products')
     discount = models.DecimalField(max_digits=10, decimal_places=2)
-    discountPerc = models.DecimalField(max_digits=2, decimal_places=2)
-    tags = ArrayField(models.CharField(max_length=50), blank=True, default=list)
-    images = ArrayField(models.ImageField(
-        upload_to=f'products/{productName}',
-        blank=False,
-        null=False
-    ))
-
+    discountPerc = models.DecimalField(max_digits=5, decimal_places=2)
+    totalSales = models.IntegerField(default=0)
+    isActive = models.BooleanField(default=True)
+    createdAt = models.DateTimeField(auto_now_add=True)
+    updatedAt = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.productName
+
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(Products, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='products/images/')
+
+    def __str__(self):
+        return f"Image for {self.product.productName}"
+
+
+class ProductTag(models.Model):
+    product = models.ForeignKey(Products, on_delete=models.CASCADE, related_name='tags')
+    tag = models.CharField(max_length=50)
+
+    def __str__(self):
+        return f"{self.tag} (Product: {self.product.productName})"
+
+
+class ProductMaterial(models.Model):
+    product = models.ForeignKey(Products, on_delete=models.CASCADE, related_name='materials')
+    material = models.CharField(max_length=50)
+
+    def __str__(self):
+        return f"{self.material} (Product: {self.product.productName})"
+
+
+class ProductFeature(models.Model):
+    product = models.ForeignKey(Products, on_delete=models.CASCADE, related_name='keyFeatures')
+    feature = models.CharField(max_length=50)
+
+    def __str__(self):
+        return f"{self.feature} (Product: {self.product.productName})"
+
+
+class ProductStockModel(models.Model):
+    size = models.IntegerField(blank=False)
+    product = models.ForeignKey(Products, on_delete=models.CASCADE, related_name='stocks')
+    quantity = models.IntegerField(blank=False, default=0)
+    color = models.CharField(max_length=9)
+
+    def __str__(self):
+        return f"(Product: {self.product.productName})"
+
+
+
 

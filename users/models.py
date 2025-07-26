@@ -31,3 +31,14 @@ class Addresses(models.Model):
 
     def __str__(self):
         return f"{self.locationName} - {self.user.phoneNumber}"
+
+
+class SubscriberModel(models.Model):
+    subscriberId = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
+    user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='subscribers')
+    createdAt = models.DateTimeField(auto_now_add=True)
+    updatedAt = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.subscriberId} - {self.user.email}"
+
