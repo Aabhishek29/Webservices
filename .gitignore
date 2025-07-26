@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Django migrations
+**/migrations/
+!**/migrations/__init__.py
+
+# Django SQLite DB
+db.sqlite3
+*.sqlite3
+
+# Environment variables
+.env
+.env.*
+
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+
+# Byte-compiled / Cache
+*.log
+*.pot
+*.pyc
+*.mo
+*.swp
+*.swo
+
+# Media & static files (optional - only ignore if generated dynamically or stored elsewhere)
+media/
+staticfiles/
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# Node-related (if using frontend tools)
+node_modules/
+*.tsbuildinfo
+
+# MacOS / Linux / Windows system files
+.DS_Store
+Thumbs.db
+
+# Coverage / Test / Reports
+htmlcov/
+.coverage
+.tox/
+.nox/
+.pytest_cache/
+coverage.xml
+*.cover
+*.py,cover
+.cache
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
