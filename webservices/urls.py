@@ -25,7 +25,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('users.urls')),
     # path('api/transactions/', include('transactions.urls')),
-    # path('api/categories/', include('categories.urls'))
+    path('api/categories/', include('categories.urls'))
 ]
 
 if settings.DEBUG:

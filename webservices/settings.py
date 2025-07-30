@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'users',
     'categories',
+    'storages',
     'transactions',
     'adminsortable2',
     'django.contrib.admin',
@@ -98,6 +99,21 @@ DATABASES = {
     }
 }
 
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "OPTIONS": {
+            "access_key": config("ACCESS_KEY_ID"),
+            "secret_key": config("SECRET_KEY_ACCESS"),
+            "bucket_name": config("DO_SPACE_NAME"),
+        },
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",  # for local static files
+    },
+}
+
+
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -132,9 +148,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # your development static files
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')    # for collectstatic in production
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -146,3 +163,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # MEDIA_URL = '/media'
 # MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Storage settings
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = 'public-read'
+
+# DigitalOcean Spaces settings
+AWS_ACCESS_KEY_ID = config('ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = config('SECRET_KEY_ACCESS')
+AWS_STORAGE_BUCKET_NAME = config('DO_SPACE_NAME')
+AWS_S3_ENDPOINT_URL = config('BUCKET_URL')
+DO_SPACE_NAME = config("DO_SPACE_NAME")
+AWS_S3_CUSTOM_DOMAIN = f"{DO_SPACE_NAME}.blr1.cdn.digitaloceanspaces.com/venusa-bucket"
