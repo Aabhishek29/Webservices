@@ -3,15 +3,15 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from .models import CategoriesModel
-from .serializers import CategorySerializer
+from .models import CategoriesModel, SubCategoriesModel
+from .serializers import CategorySerializer, SubCategorySerializer
 from django.core.files.storage import default_storage
 
 
 
 @extend_schema(request=CategorySerializer)
 @api_view(['POST', 'GET'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def category_list_create(request):
     if request.method == 'POST':
         serializer = CategorySerializer(data=request.data)
@@ -30,3 +30,21 @@ def category_list_create(request):
 
 
 
+@extend_schema(request=SubCategorySerializer)
+@api_view(['POST', 'GET'])
+# @permission_classes([IsAuthenticated])
+def subCategory_list_create(request):
+    if request.method == 'POST':
+        serializer = SubCategorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'message': 'SubCategory created successfully',
+                'data': serializer.data
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'GET':
+        subCategories = SubCategoriesModel.objects.all()
+        serializer = SubCategorySerializer(subCategories, many=True)
+        return Response(serializer.data)
