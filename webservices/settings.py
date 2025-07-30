@@ -113,6 +113,8 @@ STORAGES = {
     },
 }
 
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -176,3 +178,14 @@ AWS_STORAGE_BUCKET_NAME = config('DO_SPACE_NAME')
 AWS_S3_ENDPOINT_URL = config('BUCKET_URL')
 DO_SPACE_NAME = config("DO_SPACE_NAME")
 AWS_S3_CUSTOM_DOMAIN = f"{DO_SPACE_NAME}.blr1.cdn.digitaloceanspaces.com/venusa-bucket"
+
+
+#EMAIL CRED For sent mails
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtpout.secureserver.net'
+EMAIL_PORT = 465
+EMAIL_HOST_USER = config('MAIL_USER')
+EMAIL_HOST_PASSWORD = config('MAIL_PASS')  # NOT your Gmail password!
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+

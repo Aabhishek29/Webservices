@@ -1,5 +1,7 @@
 from twilio.rest import Client
 from decouple import config
+from django.core.mail import send_mail
+
 
 account_sid = config('TWILIO_ACCOUNT_SID')
 auth_token = config('TWILIO_AUTH_TOKEN')
@@ -15,3 +17,14 @@ def sendOTPForMobile(phoneNumber, OTP):
     )
 
     return message
+
+
+
+
+def sendMails(to_email, subj, msg):
+    subject = subj
+    message = msg
+    from_email = None  # uses DEFAULT_FROM_EMAIL
+    recipient_list = [to_email]
+
+    send_mail(subject, message, from_email, recipient_list)

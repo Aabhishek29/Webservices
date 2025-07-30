@@ -3,9 +3,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from .models import CategoriesModel, SubCategoriesModel
-from .serializers import CategorySerializer, SubCategorySerializer
-from django.core.files.storage import default_storage
+from yaml import serialize
+
+from .models import CategoriesModel, SubCategoriesModel, Products
+from .serializers import CategorySerializer, SubCategorySerializer, ProductSerializer
 
 
 
@@ -13,20 +14,22 @@ from django.core.files.storage import default_storage
 @api_view(['POST', 'GET'])
 # @permission_classes([IsAuthenticated])
 def category_list_create(request):
-    if request.method == 'POST':
-        serializer = CategorySerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({
-                'message': 'Category created successfully',
-                'data': serializer.data
-            }, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # if request.method == 'POST':
+    #     serializer = CategorySerializer(data=request.data)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response({
+    #             'message': 'Category created successfully',
+    #             'data': serializer.data
+    #         }, status=status.HTTP_201_CREATED)
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    elif request.method == 'GET':
+    if request.method == 'GET':
         categories = CategoriesModel.objects.all()
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data)
+    else:
+        return None
 
 
 
@@ -34,17 +37,67 @@ def category_list_create(request):
 @api_view(['POST', 'GET'])
 # @permission_classes([IsAuthenticated])
 def subCategory_list_create(request):
-    if request.method == 'POST':
-        serializer = SubCategorySerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({
-                'message': 'SubCategory created successfully',
-                'data': serializer.data
-            }, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # if request.method == 'POST':
+    #     serializer = SubCategorySerializer(data=request.data)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response({
+    #             'message': 'SubCategory created successfully',
+    #             'data': serializer.data
+    #         }, status=status.HTTP_201_CREATED)
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    elif request.method == 'GET':
+    if request.method == 'GET':
         subCategories = SubCategoriesModel.objects.all()
         serializer = SubCategorySerializer(subCategories, many=True)
         return Response(serializer.data)
+    else:
+        return None
+
+
+@extend_schema(request=ProductSerializer)
+@api_view(['POST', 'GET'])
+def getProducts(request):
+    if request.method == 'GET':
+        products = Products.objects.all()
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data)
+    else:
+        return None
+
+
+@extend_schema(request=ProductSerializer)
+@api_view(['GET'])
+def getProducts(request):
+    if request.method == 'GET':
+        products = Products.objects.all()
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data)
+    return None
+
+
+@extend_schema(request=ProductSerializer)
+@api_view(['GET'])
+def getProductById(request, sku):
+    if request.method == 'GET':
+        try:
+            product = Products.objects.get(SKU=sku)
+            serializer = ProductSerializer(product)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Products.DoesNotExist:
+            return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+    return None
+
+
+@api_view(['GET'])
+def getProductBySubCategory(request, subCategoryId):
+    try:
+        products = Products.objects.filter(subCategories=subCategoryId)
+        if not products.exists():
+            return Response({'error': 'No products found in this subcategory'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
