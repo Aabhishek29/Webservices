@@ -29,7 +29,7 @@ def category_list_create(request):
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data)
     else:
-        return None
+        return Response({'error': 'Method not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 
@@ -52,7 +52,7 @@ def subCategory_list_create(request):
         serializer = SubCategorySerializer(subCategories, many=True)
         return Response(serializer.data)
     else:
-        return None
+        return Response({'error': 'Method not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @extend_schema(request=ProductSerializer)
@@ -63,7 +63,7 @@ def getProducts(request):
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
     else:
-        return None
+        return Response({'error': 'Method not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @extend_schema(request=ProductSerializer)
@@ -73,7 +73,7 @@ def getProducts(request):
         products = Products.objects.all()
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
-    return None
+    return Response({'error': 'Method not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @extend_schema(request=ProductSerializer)
@@ -86,7 +86,7 @@ def getProductById(request, sku):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Products.DoesNotExist:
             return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
-    return None
+    return Response({'error': 'Method not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @api_view(['GET'])
