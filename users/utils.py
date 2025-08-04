@@ -6,16 +6,17 @@ from django.core.mail import send_mail
 account_sid = config('TWILIO_ACCOUNT_SID')
 auth_token = config('TWILIO_AUTH_TOKEN')
 
+
 def sendOTPForMobile(phoneNumber, OTP):
     # Create a client instance
     client = Client(account_sid, auth_token)
-
+    print(f"sending msg to {account_sid} {auth_token}")
     message = client.messages.create(
-        body=f"VENUSA: Gaurav bhai bhai bhai code is {OTP}. only valid for 10 mins",
+        body=f"Your Venusa login OTP is: {OTP}. This code is valid for 10 minutes. Do not share this with anyone.",
         from_='+16267885323',  # Your Twilio phone number
         to=f"+91{phoneNumber}"  # Receiver's phone number (e.g., your Indian number)
     )
-
+    print(message)
     return message
 
 

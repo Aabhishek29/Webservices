@@ -1,6 +1,8 @@
 from django.http import HttpResponse
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.decorators import (
+    api_view, authentication_classes, permission_classes
+)
 from rest_framework.response import Response
 from rest_framework import status
 from drf_spectacular.utils import extend_schema, OpenApiExample
@@ -13,11 +15,14 @@ def home(request):
 
 @extend_schema(request=SendOTPSerializer)
 @api_view(['POST'])
+@authentication_classes([])           # ← No authentication required
+@permission_classes([AllowAny])
 def send_otp(request):
+    print(request.data)
     serializer = SendOTPSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.send_otp()
-        return Response({'message': 'OTP sent successfully'})
+        return Response({'message': 'OTP sent successfully',"success": True})
     else:
         return Response(serializer.errors, status=400)
 
@@ -25,10 +30,15 @@ def send_otp(request):
 
 @extend_schema(request=VerifyOTPSerializer)
 @api_view(['POST'])
+@authentication_classes([])           # ← No authentication required
+@permission_classes([AllowAny])
 def verify_otp(request):
     serializer = VerifyOTPSerializer(data=request.data)
     if serializer.is_valid():
-        return Response(serializer.validated_data, status=200)
+        return Response({
+            "message": serializer.validated_data,
+            "success": True
+        }, status=200)
     else:
         return Response(serializer.errors, status=400)
 

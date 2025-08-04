@@ -40,11 +40,19 @@ class VerifyOTPSerializer(serializers.Serializer):
         # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
 
+
+
         return {
             "userId": str(user.userId),
             "access": str(refresh.access_token),
             "refresh": str(refresh),
+            "user": UserSerializer(user).data
         }
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Users
+        fields = '__all__'
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
@@ -65,9 +73,6 @@ class AddAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Addresses
         fields = ['user', 'locationName', 'streetAddress', 'city', 'state', 'postalCode', 'country']
-
-
-
 
 
 

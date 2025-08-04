@@ -49,6 +49,13 @@ def cart_list_by_user(request, userId):
 
 
 
+'''
+    Transaction code is implemented here
+'''
+
+
+
+
 
 
 
