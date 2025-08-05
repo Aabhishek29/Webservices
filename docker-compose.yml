@@ -24,7 +24,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: django_web
-    command: gunicorn --config gunicorn.conf.py your_project_name.wsgi:application
+    command: gunicorn --config gunicorn.conf.py webservices.wsgi:application
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/media

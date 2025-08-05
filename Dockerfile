@@ -4,7 +4,7 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV DJANGO_SETTINGS_MODULE=your_project_name.settings
+ENV DJANGO_SETTINGS_MODULE=webservices.settings
 
 # Set work directory
 WORKDIR /app
@@ -44,4 +44,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/admin/login/ || exit 1
 
 # Run gunicorn
-CMD ["gunicorn", "--config", "gunicorn.conf.py", "your_project_name.wsgi:application"]
+CMD ["gunicorn", "--config", "gunicorn.conf.py", "webservices.wsgi:application"]
