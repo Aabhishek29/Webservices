@@ -26,9 +26,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG')
 
-ALLOWED_HOSTS = ['64.227.177.50', 'localhost', '127.0.0.1', '*']
+ALLOWED_HOSTS = ['139.59.3.145', 'localhost', '127.0.0.1', '*']
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8081",  # for React Native web
