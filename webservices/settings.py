@@ -170,8 +170,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # your development static files
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')    # for collectstatic in production
+# For development - where Django looks for static files
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+# For production - where collectstatic puts all static files (must match Docker volume)
+STATIC_ROOT = '/app/staticfiles'  # Use absolute path for Docker  # for collectstatic in production
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
