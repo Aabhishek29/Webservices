@@ -170,7 +170,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # your development static files
+# STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # your development static files
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')    # for collectstatic in production
 
 # Default primary key field type
@@ -188,6 +188,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 AWS_S3_FILE_OVERWRITE = False
 AWS_DEFAULT_ACL = 'public-read'
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 
 # DigitalOcean Spaces settings
 AWS_ACCESS_KEY_ID = config('ACCESS_KEY_ID')
