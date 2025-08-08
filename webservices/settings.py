@@ -170,11 +170,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-# For development - where Django looks for static files
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-
-# For production - where collectstatic puts all static files (must match Docker volume)
-STATIC_ROOT = '/app/staticfiles'  # Use absolute path for Docker  # for collectstatic in production
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # your development static files
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')    # for collectstatic in production
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -188,7 +185,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Storage settings
-# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 AWS_S3_FILE_OVERWRITE = False
 AWS_DEFAULT_ACL = 'public-read'
 
