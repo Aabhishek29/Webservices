@@ -15,26 +15,29 @@ RUN apt-get update \
         postgresql-client \
         build-essential \
         libpq-dev \
+        curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user FIRST
+RUN adduser --disabled-password --gecos '' appuser
 
 # Install Python dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
-COPY . /app/
+# Copy project files and set ownership
+COPY --chown=appuser:appuser . /app/
 
-# Create staticfiles directory
-RUN mkdir -p /app/staticfiles
+# Create directories with proper permissions
+RUN mkdir -p /app/staticfiles /app/media \
+    && chown -R appuser:appuser /app/staticfiles /app/media
 
-# Collect static files
-RUN python manage.py collectstatic --noinput --clear
-
-# Create a non-root user
-RUN adduser --disabled-password --gecos '' appuser \
-    && chown -R appuser:appuser /app
+# Switch to appuser before running Django commands
 USER appuser
+
+# Collect static files as appuser
+RUN python manage.py collectstatic --noinput --clear
 
 # Expose port
 EXPOSE 8000
