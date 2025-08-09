@@ -35,6 +35,10 @@ CORS_ALLOWED_ORIGINS = [
     "https://venusa.co.in"
 ]
 
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://webservices.venusa.co.in'
+]
 # Application definition
 
 INSTALLED_APPS = [
