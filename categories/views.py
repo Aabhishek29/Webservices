@@ -124,6 +124,8 @@ def getProductById(request, sku):
 
 
 @api_view(['GET'])
+@authentication_classes([])           # ← No authentication required
+@permission_classes([AllowAny])
 def getProductBySubCategory(request, subCategoryId):
     try:
         products = Products.objects.filter(subCategories=subCategoryId)
