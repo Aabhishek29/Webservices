@@ -1,232 +1,477 @@
-<!doctype html><!doctype html><!doctype html>
-<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml">
-<head>
-  <meta charset="utf-8">
-  <meta name="x-apple-disable-message-reformatting">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Venusa — Welcome</title>
+# E-commerce Cart & Order Management API Documentation
 
-  <!-- Web fonts (good client support). Safe fallbacks included below. -->
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Cinzel:wght@500;600&display=swap" rel="stylesheet">
+## Overview
+This is a comprehensive e-commerce API that handles cart management, wishlist, orders, and transactions with user-specific operations.
 
-  <style>
-    /* Resets */
-    html, body { margin:0 !important; padding:0 !important; height:100% !important; width:100% !important; }
-    * { -ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; }
-    table, td { mso-table-lspace:0pt !important; mso-table-rspace:0pt !important; }
-    img { border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic; display:block; max-width:100%; height:auto; }
-    a { text-decoration:none; }
+## Key Features
+- ✅ User-specific cart operations with userId parameter
+- ✅ Professional error handling and response format
+- ✅ Comprehensive order management system
+- ✅ Transaction tracking and history
+- ✅ Admin order status management
+- ✅ Pagination support
+- ✅ Search and filtering capabilities
+- ✅ Detailed order status history
+- ✅ Proper permission checks
 
-    /* Palette */
-    :root {
-      --bg:#000000;
-      --fg:#ffffff;
-      --muted:#eaeaea;
-      --rule:#2a2a2a;
+## Authentication
+All endpoints require authentication using JWT tokens or session authentication.
+
+## Response Format
+All API responses follow a consistent format:
+
+```json
+{
+    "success": true/false,
+    "message": "Success or error message",
+    "data": {}, // Response data
+    "errors": {} // Validation errors (if any)
+}
+```
+
+---
+
+## 🛒 CART ENDPOINTS
+
+### 1. Get User's Cart
+```http
+GET /api/cart/{user_id}/
+```
+
+**Response:**
+```json
+{
+    "success": true,
+    "data": {
+        "cartId": "uuid",
+        "user": "user_id",
+        "items": [
+            {
+                "id": 1,
+                "product": {
+                    "productId": "uuid",
+                    "name": "Product Name",
+                    "price": "99.99",
+                    "image": "image_url"
+                },
+                "quantity": 2,
+                "unit_price": "99.99",
+                "total_price": "199.98"
+            }
+        ],
+        "total_items": 2,
+        "total_amount": "199.98",
+        "items_count": 1
     }
+}
+```
 
-    /* Typography */
-    .h1 { font-family:"Cinzel", Georgia, "Times New Roman", serif; font-size:34px; line-height:1.25; font-weight:600; letter-spacing:1px; color:var(--fg); }
-    .h2 { font-family:"Cinzel", Georgia, serif; font-size:16px; line-height:1.4; font-weight:500; letter-spacing:1.2px; color:var(--fg); }
-    .body { font-family:"IBM Plex Sans", Arial, Helvetica, sans-serif; font-size:15px; line-height:1.8; color:var(--muted); }
-    .small { font-size:12px; line-height:1.6; }
+### 2. Add Item to Cart
+```http
+POST /api/cart/add/
+Content-Type: application/json
 
-    /* Layout helpers */
-    .container { width:640px; max-width:100%; }
-    .px { padding-left:28px; padding-right:28px; }
-    .rule { border-top:1px solid var(--rule); }
-    .card { border:1px solid var(--rule); }
+{
+    "user_id": "uuid",
+    "product_id": "uuid",
+    "quantity": 2
+}
+```
 
-    /* Buttons */
-    .btn { display:inline-block; padding:14px 24px; background:#ffffff; color:#000000 !important; font-weight:600; border:1px solid #ffffff; font-family:"IBM Plex Sans", Arial, sans-serif; }
-    .btn-outline { display:inline-block; padding:14px 24px; background:transparent; color:#ffffff !important; border:1px solid #ffffff; font-weight:600; font-family:"IBM Plex Sans", Arial, sans-serif; }
-
-    /* Responsive */
-    @media (max-width:640px){
-      .px{ padding-left:22px !important; padding-right:22px !important; }
-      .h1{ font-size:26px !important; }
-      .stack{ display:block !important; width:100% !important; }
-      .sp16{ height:16px !important; line-height:16px !important; font-size:16px !important; }
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Item added to cart successfully",
+    "data": {
+        // Updated cart object
     }
-  </style>
-  <!--[if mso]>
-    <style>
-      .h1, .h2 { font-family: Georgia, serif !important; }
-      .body, .btn, .btn-outline { font-family: Arial, sans-serif !important; }
-    </style>
-  <![endif]-->
-</head>
+}
+```
 
-<body style="background:#000; margin:0; padding:0;">
-  <!-- Preheader (hidden) -->
-  <div style="display:none; max-height:0; overflow:hidden; mso-hide:all;">
-    Monochrome done right — welcome to Venusa. Early access, private previews, and member‑only rewards await.
-  </div>
+### 3. Update Cart Item
+```http
+PUT /api/cart/{user_id}/update/{item_id}/
+Content-Type: application/json
 
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#000;">
-    <tr>
-      <td align="center">
-        <table role="presentation" class="container" width="640" cellpadding="0" cellspacing="0">
-          <!-- Nameplate -->
-          <tr>
-            <td class="px" style="padding:22px 28px;" align="center">
-              <div class="h2" style="letter-spacing:6px;">VENUSA</div>
-            </td>
-          </tr>
-          <tr><td class="px" style="padding:0 28px 18px;"><div class="rule"></div></td></tr>
+{
+    "quantity": 3
+}
+```
 
-          <!-- Hero -->
-          <tr>
-            <td class="px" style="padding:0 28px;">
-              <div class="h1" style="margin:0 0 10px;">Welcome to the Venusa Community</div>
-              <div class="body" style="margin:0 0 18px;">
-                Hi <strong style="color:#fff;">{email}</strong>, your membership opens the door to <strong style="color:#fff;">early drops</strong>, <strong style="color:#fff;">private previews</strong>, and designs built with intent.
-              </div>
-              <div style="padding-bottom:10px;">
-                <a class="btn" href="https://venusa.co.in">Explore the Collection →</a>
-              </div>
-            </td>
-          </tr>
+### 4. Remove Item from Cart
+```http
+DELETE /api/cart/{user_id}/remove/{item_id}/
+```
 
-          <!-- Feature Cards -->
-          <tr>
-            <td class="px" style="padding:20px 28px 0;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td class="card stack" width="50%" valign="top" style="padding:18px;">
-                    <div class="h2" style="margin:0 0 6px;">PRIORITY ACCESS</div>
-                    <div class="body">Be first in line for limited releases and private previews.</div>
-                  </td>
-                  <td class="sp16" style="width:16px;">&nbsp;</td>
-                  <td class="card stack" width="50%" valign="top" style="padding:18px;">
-                    <div class="h2" style="margin:0 0 6px;">EXCLUSIVE OFFERS</div>
-                    <div class="body">Member‑only rewards tailored to how you like to shop.</div>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+### 5. Clear Cart
+```http
+DELETE /api/cart/{user_id}/clear/
+```
 
-          <!-- Brand Story Block -->
-          <tr><td class="px" style="padding:22px 28px 0;"><div class="rule"></div></td></tr>
-          <tr>
-            <td class="px" style="padding:20px 28px 0;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="card">
-                <tr>
-                  <td style="padding:22px;">
-                    <div class="h2" style="margin:0 0 8px;">How We Design</div>
-                    <div class="body">
-                      Precision lines. Enduring fabrics. A monochrome foundation that lets texture and structure lead.
-                      Each silhouette is engineered to move with your day—quiet confidence, no excess.
-                    </div>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+---
 
-          <!-- Product Grid (Placeholders) -->
-          <tr>
-            <td class="px" style="padding:20px 28px 0;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <!-- Product 1 -->
-                  <td class="stack" width="50%" valign="top" style="border:1px solid var(--rule);">
-                    <img src="https://venusa-bucket.blr1.cdn.digitaloceanspaces.com/venusa-bucket/products/images/1000070207.jpg" width="100%" alt="Featured product 1">
-                    <table role="presentation" width="100%"><tr><td style="padding:14px 16px;">
-                      <div class="h2" style="margin:0 0 4px;">Essential Oversized Tee</div>
-                      <div class="body">Soft handle. Clean drape. Built to layer.</div>
-                      <div style="height:12px;"></div>
-                      <a class="btn-outline" href="https://venusa.co.in">View Product</a>
-                    </td></tr></table>
-                  </td>
-                  <td class="sp16" style="width:16px;">&nbsp;</td>
-                  <!-- Product 2 -->
-                  <td class="stack" width="50%" valign="top" style="border:1px solid var(--rule);">
-                    <img src="https://venusa-bucket.blr1.cdn.digitaloceanspaces.com/venusa-bucket/products/images/1000070205.jpg" width="100%" alt="Featured product 2">
-                    <table role="presentation" width="100%"><tr><td style="padding:14px 16px;">
-                      <div class="h2" style="margin:0 0 4px;">Structured Midi Skirt</div>
-                      <div class="body">Architectural lines. Effortless movement.</div>
-                      <div style="height:12px;"></div>
-                      <a class="btn-outline" href="https://venusa.co.in">View Product</a>
-                    </td></tr></table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+## ❤️ WISHLIST ENDPOINTS
 
-          <!-- Quote / Testimonial -->
-          <tr>
-            <td class="px" style="padding:22px 28px 0;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="card">
-                <tr>
-                  <td style="padding:22px;">
-                    <div class="h2" style="margin:0 0 6px;">“Less noise. More intention.”</div>
-                    <div class="body">Designs that feel considered—from stitch to silhouette.</div>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+### 1. Get User's Wishlist
+```http
+GET /api/wishlist/{user_id}/
+```
 
-          <!-- FAQ (simple text, email-safe) -->
-          <tr><td class="px" style="padding:22px 28px 0;"><div class="rule"></div></td></tr>
-          <tr>
-            <td class="px" style="padding:18px 28px 0;">
-              <div class="h2" style="margin:0 0 10px;">FAQs</div>
-              <div class="body">
-                <strong style="color:#fff;">When do new drops go live?</strong><br>
-                Members get notified first—keep an eye on your inbox for early access links.<br><br>
+### 2. Add to Wishlist
+```http
+POST /api/wishlist/add/
+Content-Type: application/json
 
-                <strong style="color:#fff;">What sizes do you carry?</strong><br>
-                Most pieces run XS–XL. Detailed size charts are on every product page.<br><br>
+{
+    "product_id": "uuid"
+}
+```
 
-                <strong style="color:#fff;">What’s your return policy?</strong><br>
-                Easy 7–14 day returns on unworn items with tags; see our policy for region specifics.
-              </div>
-            </td>
-          </tr>
+### 3. Remove from Wishlist
+```http
+DELETE /api/wishlist/{user_id}/remove/{product_id}/
+```
 
-          <!-- Secondary CTA -->
-          <tr>
-            <td align="center" style="padding:24px 28px 28px;">
-              <a class="btn-outline" href="https://venusa.co.in">See What’s New</a>
-            </td>
-          </tr>
+### 4. Clear Wishlist
+```http
+DELETE /api/wishlist/{user_id}/clear/
+```
 
-          <!-- Social Strip -->
-          <tr><td class="px" style="padding:0 28px 18px;"><div class="rule"></div></td></tr>
-          <tr>
-            <td align="center" class="body" style="padding:12px 28px 6px; color:#bdbdbd;">
-              Follow along
-            </td>
-          </tr>
-          <tr>
-            <td align="center" style="padding:0 28px 22px;">
-              <!-- Text links (swap for hosted icons if you prefer) -->
-              <a href="https://instagram.com/venusa" class="body" style="margin:0 10px; color:#fff;">Instagram</a>
-              <a href="https://x.com/venusa" class="body" style="margin:0 10px; color:#fff;">X</a>
-              <a href="https://pinterest.com/venusa" class="body" style="margin:0 10px; color:#fff;">Pinterest</a>
-              <a href="https://www.facebook.com/venusa/" class="body" style="margin:0 10px; color:#fff;">Facebook</a>
-            </td>
-          </tr>
+---
 
-          <!-- Footer -->
-          <tr><td class="px" style="padding:0 28px 12px;"><div class="rule"></div></td></tr>
-          <tr>
-            <td class="body small" align="center" style="color:#bdbdbd; padding:8px 28px 22px;">
-              You’re receiving this because you joined the Venusa community.<br>
-              <a href="https://webservices.venusa.co.in/unsubscribe?email={email}" style="color:#ffffff;">Manage preferences</a> •
-              <a href="https://webservices.venusa.co.in/unsubscribe?email={email}" style="color:#ffffff;">Unsubscribe</a><br>
-              Venusa, C-608B, JVTS GARDEN, CHATTARPUR, NEW DELHI South West Delhi DELHI,
-              110074
-            </td>
-          </tr>
+## 📦 ORDER ENDPOINTS
 
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
+### 1. Get Order History
+```http
+GET /api/orders/{user_id}/?status=PENDING&search=ORD-2024&page=1&page_size=20
+```
+
+**Query Parameters:**
+- `status`: Filter by order status
+- `payment_status`: Filter by payment status
+- `search`: Search by order number or product name
+- `date_from`: Filter orders from date (YYYY-MM-DD)
+- `date_to`: Filter orders to date (YYYY-MM-DD)
+- `page`: Page number
+- `page_size`: Items per page
+
+**Response:**
+```json
+{
+    "success": true,
+    "data": [
+        {
+            "orderId": "uuid",
+            "orderNumber": "ORD-2024-000001",
+            "status": "PENDING",
+            "paymentStatus": "PENDING",
+            "totalAmount": "199.98",
+            "items": [
+                {
+                    "product_name": "Product Name",
+                    "quantity": 2,
+                    "unitPrice": "99.99"
+                }
+            ],
+            "createdAt": "2024-01-01T00:00:00Z"
+        }
+    ],
+    "count": 1,
+    "next": null,
+    "previous": null
+}
+```
+
+### 2. Get Order Details
+```http
+GET /api/orders/{user_id}/{order_id}/
+```
+
+**Response includes:**
+- Complete order information
+- Order items
+- Shipping and billing addresses
+- Status history
+- Transaction details
+
+### 3. Create Order from Cart
+```http
+POST /api/orders/create/
+Content-Type: application/json
+
+{
+    "user_id": "uuid",
+    "shipping_address_id": "uuid",
+    "billing_address_id": "uuid", // optional
+    "notes": "Special instructions",
+    "is_gift": false,
+    "gift_message": ""
+}
+```
+
+### 4. Cancel Order
+```http
+POST /api/orders/{user_id}/{order_id}/cancel/
+```
+
+### 5. Update Order Status (Admin Only)
+```http
+PATCH /api/orders/{order_id}/status/
+Content-Type: application/json
+
+{
+    "status": "SHIPPED",
+    "notes": "Order shipped via FedEx",
+    "tracking_id": "1234567890"
+}
+```
+
+**Available Statuses:**
+- `PENDING` - Initial status
+- `CONFIRMED` - Order confirmed
+- `PROCESSING` - Being processed
+- `PACKED` - Ready for shipping
+- `SHIPPED` - Shipped
+- `OUT_FOR_DELIVERY` - Out for delivery
+- `DELIVERED` - Delivered
+- `CANCELLED` - Cancelled
+- `RETURNED` - Returned
+
+---
+
+## 💳 TRANSACTION ENDPOINTS
+
+### 1. Get Transaction History
+```http
+GET /api/transactions/{user_id}/
+```
+
+**Response:**
+```json
+{
+    "success": true,
+    "data": [
+        {
+            "transactionId": "uuid",
+            "order_number": "ORD-2024-000001",
+            "status": "SUCCESS",
+            "amount": "199.98",
+            "currency": "INR",
+            "razorpay_payment_id": "pay_xxxxx",
+            "createdAt": "2024-01-01T00:00:00Z"
+        }
+    ]
+}
+```
+
+---
+
+## 🔧 USAGE EXAMPLES
+
+### Frontend Integration Example (JavaScript)
+
+```javascript
+// Add item to cart
+const addToCart = async (userId, productId, quantity = 1) => {
+    try {
+        const response = await fetch('/api/cart/add/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                product_id: productId,
+                quantity: quantity
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log('Item added to cart:', data.message);
+            updateCartUI(data.data);
+        } else {
+            console.error('Error:', data.errors);
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+    }
+};
+
+// Get user's cart
+const getCart = async (userId) => {
+    try {
+        const response = await fetch(`/api/cart/${userId}/`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            displayCart(data.data);
+        }
+    } catch (error) {
+        console.error('Error fetching cart:', error);
+    }
+};
+
+// Create order
+const createOrder = async (orderData) => {
+    try {
+        const response = await fetch('/api/orders/create/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(orderData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log('Order created:', data.data.orderNumber);
+            redirectToPayment(data.data.orderId);
+        } else {
+            console.error('Order creation failed:', data.errors);
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+    }
+};
+```
+
+### Python/Django Integration Example
+
+```python
+import requests
+from django.conf import settings
+
+class EcommerceAPI:
+    def __init__(self, base_url, token):
+        self.base_url = base_url
+        self.headers = {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json'
+        }
+    
+    def add_to_cart(self, user_id, product_id, quantity=1):
+        """Add item to user's cart"""
+        url = f"{self.base_url}/cart/add/"
+        data = {
+            'user_id': str(user_id),
+            'product_id': str(product_id),
+            'quantity': quantity
+        }
+        
+        response = requests.post(url, json=data, headers=self.headers)
+        return response.json()
+    
+    def get_cart(self, user_id):
+        """Get user's cart"""
+        url = f"{self.base_url}/cart/{user_id}/"
+        response = requests.get(url, headers=self.headers)
+        return response.json()
+    
+    def create_order(self, order_data):
+        """Create order from cart"""
+        url = f"{self.base_url}/orders/create/"
+        response = requests.post(url, json=order_data, headers=self.headers)
+        return response.json()
+
+# Usage
+api = EcommerceAPI('https://api.example.com', 'your-jwt-token')
+
+# Add item to cart
+result = api.add_to_cart('user-uuid', 'product-uuid', 2)
+if result['success']:
+    print(f"Added to cart: {result['message']}")
+
+# Create order
+order_data = {
+    'user_id': 'user-uuid',
+    'shipping_address_id': 'address-uuid',
+    'notes': 'Handle with care'
+}
+order_result = api.create_order(order_data)
+```
+
+---
+
+## 🛡️ PERMISSIONS & SECURITY
+
+### Permission Levels:
+1. **User Level**: Can access their own cart, wishlist, and orders
+2. **Admin Level**: Can access all data and update order statuses
+
+### Security Features:
+- User ID validation in URL parameters
+- Permission checks for cross-user access
+- Input validation and sanitization
+- Atomic transactions for data consistency
+- Comprehensive error handling
+
+---
+
+## 📊 ADMIN FEATURES
+
+### Django Admin Integration:
+- Custom admin interfaces for all models
+- Bulk actions for order management
+- Detailed order tracking and history
+- Transaction monitoring
+- User activity insights
+
+### Admin Actions:
+- Mark orders as shipped
+- Mark orders as delivered
+- View detailed transaction logs
+- Export order data
+
+---
+
+## 🚀 DEPLOYMENT NOTES
+
+### Database Migrations:
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+### Required Dependencies:
+```
+Django>=4.0
+djangorestframework>=3.14
+django-cors-headers
+drf-spectacular  # for API documentation
+```
+
+### Settings Configuration:
+```python
+INSTALLED_APPS = [
+    # ... other apps
+    'rest_framework',
+    'corsheaders',
+    'drf_spectacular',
+    'carts',  # your app name
+]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20
+}
+```
+
+This API provides a comprehensive e-commerce solution with professional-grade features and proper user management through userId parameters in URLs.
