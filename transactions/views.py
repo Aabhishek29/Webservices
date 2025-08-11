@@ -47,7 +47,8 @@ def cart_list_by_user(request, userId):
 
     return Response({'error': 'Method not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-
+def orderHistoryByUserId(request):
+    pass
 
 '''
     Transaction code is implemented here

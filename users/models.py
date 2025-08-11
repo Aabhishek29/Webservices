@@ -25,7 +25,7 @@ class Addresses(models.Model):
     city = models.CharField(max_length=50, default="")
     state = models.CharField(max_length=50, default="")
     postalCode = models.CharField(max_length=6, default="")
-    country = models.CharField(max_length=25, default="")
+    country = models.CharField(max_length=25, default="India")
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
 
@@ -34,11 +34,23 @@ class Addresses(models.Model):
 
 
 class SubscriberModel(models.Model):
-    subscriberId = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
-    user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='subscribers')
+    subscriberId = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        unique=True
+    )
+    email = models.EmailField(unique=True, null=False)
+    user = models.ForeignKey(
+        Users,
+        on_delete=models.CASCADE,
+        related_name='subscribers',
+        null=True,  # Allow null in DB
+        blank=True  # Allow blank in forms
+    )
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.subscriberId} - {self.user.email}"
+        return f"{self.subscriberId} - {self.user.email if self.user else 'No User'}"
 
