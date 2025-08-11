@@ -112,10 +112,27 @@ def getProducts(request):
 
 @extend_schema(request=ProductSerializer)
 @api_view(['GET'])
-def getProductById(request, sku):
+@authentication_classes([])           # ← No authentication required
+@permission_classes([AllowAny])
+def getProductBySKU(request, sku):
     if request.method == 'GET':
         try:
             product = Products.objects.get(SKU=sku)
+            serializer = ProductSerializer(product)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Products.DoesNotExist:
+            return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+    return Response({'error': 'Method not allowed', 'success': False}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+@extend_schema(request=ProductSerializer)
+@api_view(['GET'])
+@authentication_classes([])           # ← No authentication required
+@permission_classes([AllowAny])
+def getProductById(request, productId):
+    if request.method == 'GET':
+        try:
+            product = Products.objects.get(productId=productId)
             serializer = ProductSerializer(product)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Products.DoesNotExist:
