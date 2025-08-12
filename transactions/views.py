@@ -206,8 +206,8 @@ def add_to_cart(request):
     serializer = AddToCartSerializer(data=request.data)
 
     if serializer.is_valid():
-        user_id = serializer.validated_data['user_id']
-        product_id = serializer.validated_data['product_id']
+        user_id = serializer.validated_data['userId']
+        product_id = serializer.validated_data['productId']
         quantity = serializer.validated_data['quantity']
 
         user = get_user_by_id(user_id)
