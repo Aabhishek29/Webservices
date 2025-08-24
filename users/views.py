@@ -16,6 +16,31 @@ def home(request):
     return HttpResponse("<h1>Hello world</h1>")
 
 
+@api_view(['POST'])
+@authentication_classes([])  # No authentication required
+@permission_classes([AllowAny])
+def contact_us_for_project(request):
+    data = request.data
+
+    name = data.get('name')
+    email = data.get('email')
+    msg = data.get('msg')  # ← yaha 'name' ke jagah 'msg' hona chahiye
+
+    subject = f"New Contact Us Message from {name}"
+    html_message = f"""
+        <h3>New Project Inquiry</h3>
+        <p><strong>Name:</strong> {name}</p>
+        <p><strong>Email:</strong> {email}</p>
+        <p><strong>Message:</strong> {msg}</p>
+    """
+
+    try:
+        send_html_mail(['abhishek.s.chauhan2002@gmail.com', 'sahilobhrai19@gmail.com'],subject,html_message)
+        return Response({"success": True, "message": "Message sent successfully."})
+    except Exception as e:
+        return Response({"success": False, "error": str(e)}, status=500)
+
+
 @extend_schema(request=SendOTPSerializer)
 @api_view(['POST'])
 @authentication_classes([])           # ← No authentication required

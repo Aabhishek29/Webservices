@@ -46,7 +46,7 @@ def send_successfully_account_created_sms(phoneNumber):
 def send_html_mail(to_email, subj, html_content):
     subject = subj
     from_email = settings.DEFAULT_FROM_EMAIL
-    recipient_list = [to_email]
+    recipient_list = to_email if isinstance(to_email, list) else [to_email]
 
     # Create email object
     email = EmailMultiAlternatives(subject, '', from_email, recipient_list)

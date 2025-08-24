@@ -28,7 +28,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG')
 
-ALLOWED_HOSTS = ['webservices.venusa.co.in', 'www.webservices.venusa.co.in', '3.111.51.221', 'localhost']
+ALLOWED_HOSTS = ['webservices.venusa.co.in', 'www.webservices.venusa.co.in', '3.111.51.221', 'localhost', "127.0.0.1"]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8081",  # for React Native web
@@ -116,7 +116,7 @@ STORAGES = {
         "OPTIONS": {
             "access_key": config("ACCESS_KEY_ID"),
             "secret_key": config("SECRET_KEY_ACCESS"),
-            "bucket_name": config("DO_SPACE_NAME"),
+            "bucket_name": config("BUCKET_NAME"),
         },
     },
     "staticfiles": {
@@ -192,16 +192,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Storage settings
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 AWS_S3_FILE_OVERWRITE = False
-AWS_DEFAULT_ACL = 'public-read'
+AWS_DEFAULT_ACL = None
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 
 # DigitalOcean Spaces settings
 AWS_ACCESS_KEY_ID = config('ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = config('SECRET_KEY_ACCESS')
-AWS_STORAGE_BUCKET_NAME = config('DO_SPACE_NAME')
+AWS_STORAGE_BUCKET_NAME = config('BUCKET_NAME')
+AWS_S3_SIGNATURE_NAME = 's3v4'
+AWS_S3_REGION_NAME = config('AWS_REGION')
 AWS_S3_ENDPOINT_URL = config('BUCKET_URL')
-DO_SPACE_NAME = config("DO_SPACE_NAME")
-AWS_S3_CUSTOM_DOMAIN = f"{DO_SPACE_NAME}.blr1.cdn.digitaloceanspaces.com/venusa-bucket"
+# AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.ap-south-1.amazonaws.com"
 
 
 #EMAIL CRED For sent mails
