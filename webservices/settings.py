@@ -28,16 +28,18 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG')
 
-ALLOWED_HOSTS = ['webservices.venusa.co.in', 'www.webservices.venusa.co.in', '3.111.51.221', 'localhost', "127.0.0.1"]
+ALLOWED_HOSTS = ['webservices.venusa.co.in', 'www.venusa.co.in', 'www.webservices.venusa.co.in', '3.111.51.221', 'localhost', "127.0.0.1"]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8081",  # for React Native web
-    "https://venusa.co.in"
+    "https://venusa.co.in",
+    "http://www.venusa.co.in/"
 ]
 
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://webservices.venusa.co.in'
+    'https://webservices.venusa.co.in',
+    'http://www.venusa.co.in/'
 ]
 # Application definition
 
