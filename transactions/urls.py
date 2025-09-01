@@ -10,7 +10,8 @@ urlpatterns = [
 
     # ============ CART URLs ============
     path('cart/<uuid:user_id>/', views.get_cart, name='get-cart'),
-    path('cart/add/', views.add_to_cart, name='add-to-cart'),
+    path('cart/add', views.add_to_cart, name='add-to-cart'),
+    path('cart/add/', views.add_to_cart, name='add-to-cart-slash'),
     path('cart/<uuid:user_id>/update/<int:item_id>/', views.update_cart_item, name='update-cart-item'),
     path('cart/<uuid:user_id>/remove/<int:item_id>/', views.remove_from_cart, name='remove-from-cart'),
     path('cart/<uuid:user_id>/clear/', views.clear_cart, name='clear-cart'),
