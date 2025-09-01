@@ -33,7 +33,7 @@ ALLOWED_HOSTS = ['webservices.venusa.co.in', 'www.venusa.co.in', 'www.webservice
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8081",  # for React Native web
     "https://venusa.co.in",
-    "http://www.venusa.co.in/"
+    # "http://www.venusa.co.in/"
 ]
 
 
@@ -126,6 +126,8 @@ STORAGES = {
     },
 }
 
+
+AUTH_USER_MODEL = 'users.Users'
 
 SIMPLE_JWT = {
     'USER_ID_FIELD': 'userId',
