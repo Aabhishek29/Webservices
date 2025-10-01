@@ -127,7 +127,7 @@ STORAGES = {
 }
 
 
-AUTH_USER_MODEL = 'users.Users'
+# AUTH_USER_MODEL = 'users.Users'
 
 SIMPLE_JWT = {
     'USER_ID_FIELD': 'userId',
