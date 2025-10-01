@@ -29,6 +29,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     firstName = models.CharField(max_length=25, default="UnKnown", blank=True)
     lastName = models.CharField(max_length=25, default="", blank=True)
     email = models.EmailField(unique=True, blank=True, null=True)
+    password = models.CharField(max_length=128)
     phoneNumber = models.CharField(max_length=15, unique=True)
     otp = models.CharField(max_length=6, blank=True)
     is_verified = models.BooleanField(default=False)
