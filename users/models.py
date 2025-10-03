@@ -2,29 +2,8 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 from django.db import models
 import uuid
 
-class UserManager(BaseUserManager):
-    def create_user(self, phoneNumber, email=None, password=None, **extra_fields):
-        if not phoneNumber:
-            raise ValueError('The Phone Number field must be set')
-        
-        user = self.model(phoneNumber=phoneNumber, email=email, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-    
-    def create_superuser(self, phoneNumber, email=None, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_verified', True)
-        
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser must have is_staff=True.')
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser must have is_superuser=True.')
-        
-        return self.create_user(phoneNumber, email, password, **extra_fields)
 
-class Users(AbstractBaseUser, PermissionsMixin):
+class Users(models.Model):
     userId = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     firstName = models.CharField(max_length=25, default="UnKnown", blank=True)
     lastName = models.CharField(max_length=25, default="", blank=True)
@@ -37,8 +16,6 @@ class Users(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
-    
-    objects = UserManager()
     
     USERNAME_FIELD = 'phoneNumber'
     REQUIRED_FIELDS = []
