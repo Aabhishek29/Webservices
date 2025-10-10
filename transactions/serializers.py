@@ -12,10 +12,17 @@ from .models import (
 
 class WishlistProductSerializer(serializers.ModelSerializer):
     """Nested product serializer for wishlist"""
+    name = serializers.CharField(source='productName', read_only=True)
+    discountedPrice = serializers.SerializerMethodField()
 
     class Meta:
         model = Products
-        fields = ['productId', 'name', 'price', 'discountedPrice', 'image']
+        fields = ['productId', 'name', 'price', 'discountedPrice']
+
+    def get_discountedPrice(self, obj):
+        if obj.discount > 0:
+            return obj.price - obj.discount
+        return obj.price
 
 
 class WishlistSerializer(serializers.ModelSerializer):
@@ -50,10 +57,28 @@ class WishlistSerializer(serializers.ModelSerializer):
 
 class CartItemProductSerializer(serializers.ModelSerializer):
     """Nested product serializer for cart items"""
+    name = serializers.CharField(source='productName', read_only=True)
+    discountedPrice = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Products
-        fields = ['productId', 'name', 'price', 'discountedPrice', 'image', 'inStock']
+        fields = ['productId', 'name', 'price', 'discountedPrice', 'image', 'isActive']
+
+    def get_discountedPrice(self, obj):
+        if obj.discount > 0:
+            return obj.price - obj.discount
+        return obj.price
+
+    def get_image(self, obj):
+        # Get first image from related ProductImage
+        first_image = obj.images.first()
+        if first_image and first_image.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(first_image.image.url)
+            return first_image.image.url
+        return None
 
 
 class CartItemSerializer(serializers.ModelSerializer):
@@ -112,8 +137,8 @@ class AddToCartSerializer(serializers.Serializer):
     def validate_product_id(self, value):
         try:
             product = Products.objects.get(pk=value)
-            if not product.inStock:
-                raise serializers.ValidationError("Product is out of stock.")
+            if not product.isActive:
+                raise serializers.ValidationError("Product is not available.")
             return value
         except Products.DoesNotExist:
             raise serializers.ValidationError("Product does not exist.")
