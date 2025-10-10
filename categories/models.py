@@ -76,6 +76,24 @@ class Products(models.Model):
     def __str__(self):
         return self.productName
 
+    @property
+    def total_stock(self):
+        """Get total stock across all sizes and colors"""
+        return self.stocks.aggregate(total=models.Sum('quantity'))['total'] or 0
+
+    @property
+    def discounted_price(self):
+        """Calculate discounted price"""
+        if self.discount > 0:
+            return self.price - self.discount
+        elif self.discountPerc > 0:
+            return self.price * (1 - self.discountPerc / 100)
+        return self.price
+
+    def has_stock(self, quantity=1):
+        """Check if product has enough stock"""
+        return self.total_stock >= quantity
+
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Products, on_delete=models.CASCADE, related_name='images')

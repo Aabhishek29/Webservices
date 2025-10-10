@@ -145,9 +145,9 @@ class AddToCartSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         product = Products.objects.get(pk=attrs['product_id'])
-        if hasattr(product, 'stock') and product.stock < attrs['quantity']:
+        if not product.has_stock(attrs['quantity']):
             raise serializers.ValidationError(
-                f"Only {product.stock} items available in stock."
+                f"Only {product.total_stock} items available in stock."
             )
         return attrs
 
@@ -158,9 +158,9 @@ class UpdateCartItemSerializer(serializers.Serializer):
     def validate_quantity(self, value):
         if hasattr(self, 'instance') and self.instance:
             product = self.instance.product
-            if hasattr(product, 'stock') and product.stock < value:
+            if not product.has_stock(value):
                 raise serializers.ValidationError(
-                    f"Only {product.stock} items available in stock."
+                    f"Only {product.total_stock} items available in stock."
                 )
         return value
 

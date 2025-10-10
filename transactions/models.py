@@ -20,7 +20,7 @@ class Cart(models.Model):
         verbose_name_plural = 'Carts'
 
     def __str__(self):
-        return f"Cart - {self.user.username if hasattr(self.user, 'username') else self.user}"
+        return f"Cart - {self.user.phoneNumber}"
 
     @property
     def total_items(self):
@@ -42,6 +42,8 @@ class CartItem(models.Model):
         default=1,
         validators=[MinValueValidator(1), MaxValueValidator(999)]
     )
+    # Price snapshot - store price when added to cart
+    price_at_addition = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     addedAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
 
@@ -52,16 +54,24 @@ class CartItem(models.Model):
         verbose_name_plural = 'Cart Items'
         ordering = ['-updatedAt']
 
+    def save(self, *args, **kwargs):
+        # Snapshot the price when first added
+        if not self.pk and not self.price_at_addition:
+            self.price_at_addition = self.product.price
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.product.name} x {self.quantity}"
+        return f"{self.product.productName} x {self.quantity}"
 
     @property
     def total_price(self):
-        return self.quantity * self.product.price
+        # Use snapshotted price if available, otherwise use current price
+        price = self.price_at_addition if self.price_at_addition else self.product.price
+        return self.quantity * price
 
     @property
     def unit_price(self):
-        return self.product.price
+        return self.price_at_addition if self.price_at_addition else self.product.price
 
 
 class Wishlist(models.Model):
@@ -78,7 +88,7 @@ class Wishlist(models.Model):
         ordering = ['-createdAt']
 
     def __str__(self):
-        return f'{self.user} - {self.product.name}'
+        return f'{self.user} - {self.product.productName}'
 
 
 ORDER_STATUS_CHOICES = (
@@ -208,10 +218,9 @@ class OrderItem(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.pk:  # Only on creation
-            self.productName = self.product.name
+            self.productName = self.product.productName
             self.unitPrice = self.product.price
-            if hasattr(self.product, 'sku'):
-                self.productSku = self.product.sku
+            self.productSku = self.product.SKU if self.product.SKU else ''
 
         self.totalPrice = self.quantity * self.unitPrice
         super().save(*args, **kwargs)
