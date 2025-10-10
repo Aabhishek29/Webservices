@@ -1,4 +1,28 @@
+version: '3.8'
+
 services:
+  # PostgreSQL Database (optional - comment out if using external RDS)
+  db:
+    image: postgres:15-alpine
+    container_name: django_postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - django_network
+
+  # Django Web Application
   web:
     build:
       context: .
@@ -8,7 +32,7 @@ services:
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
-      # Remove this line in production: - .:/app
+      # Uncomment for development hot-reload: - .:/app
     ports:
       - "8000:8000"
     env_file:
@@ -19,18 +43,23 @@ services:
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_HOST=${DB_HOST}  # This will be your RDS endpoint
-      - DB_PORT=${DB_PORT}  # Usually 5432 for PostgreSQL RDS
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/admin/login/"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
     networks:
       - django_network
 
+  # Nginx Reverse Proxy
   nginx:
     image: nginx:alpine
     container_name: django_nginx
@@ -41,7 +70,8 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - static_volume:/app/staticfiles:ro
       - media_volume:/app/media:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
+      # Uncomment if you have SSL certificates
+      # - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - web
     restart: unless-stopped
@@ -54,6 +84,7 @@ services:
       - django_network
 
 volumes:
+  postgres_data:
   static_volume:
   media_volume:
 
