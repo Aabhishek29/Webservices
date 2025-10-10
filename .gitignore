@@ -65,3 +65,9 @@ build/
 dist/
 *.egg-info/
 .eggs/
+
+# SSH keys and certificates
+*.pem
+*.key
+*.crt
+*.cer

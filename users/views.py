@@ -7,7 +7,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from .serializers import (
-    SendOTPSerializer, VerifyOTPSerializer, UserUpdateSerializer, AddAddressSerializer,SubscriberSerializer
+    SendOTPSerializer, VerifyOTPSerializer, SignupSerializer, LoginSerializer,
+    UserUpdateSerializer, AddAddressSerializer, SubscriberSerializer
 )
 from .utils import send_html_mail
 from .models import Users
@@ -56,19 +57,114 @@ def send_otp(request):
 
 
 
-@extend_schema(request=VerifyOTPSerializer)
+@extend_schema(
+    request=VerifyOTPSerializer,
+    examples=[
+        OpenApiExample(
+            "Verify OTP Example",
+            value={
+                "phoneNumber": "+919876543210",
+                "otp": "123456"
+            },
+            request_only=True
+        )
+    ]
+)
 @api_view(['POST'])
-@authentication_classes([])           # ← No authentication required
+@authentication_classes([])
 @permission_classes([AllowAny])
 def verify_otp(request):
+    """
+    Verify OTP sent to phone number.
+    After verification, user can proceed to complete signup (if new user) or login (if existing user).
+    """
     serializer = VerifyOTPSerializer(data=request.data)
     if serializer.is_valid():
         return Response({
-            "message": serializer.validated_data,
+            "message": "OTP verified successfully",
+            "data": serializer.validated_data,
             "success": True
         }, status=200)
     else:
-        return Response(serializer.errors, status=400)
+        return Response({
+            "success": False,
+            "errors": serializer.errors
+        }, status=400)
+
+
+@extend_schema(
+    request=SignupSerializer,
+    examples=[
+        OpenApiExample(
+            "Signup Example",
+            value={
+                "phoneNumber": "+919876543210",
+                "firstName": "John",
+                "lastName": "Doe",
+                "email": "john.doe@example.com",
+                "password": "SecurePassword123"
+            },
+            request_only=True
+        )
+    ]
+)
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def signup(request):
+    """
+    Complete user signup after OTP verification.
+    Requires: firstName, lastName, email, password, phoneNumber (verified)
+    Returns: JWT tokens and user data
+    """
+    serializer = SignupSerializer(data=request.data)
+    if serializer.is_valid():
+        result = serializer.save()
+        return Response({
+            "message": "Signup successful",
+            "success": True,
+            "data": result
+        }, status=status.HTTP_201_CREATED)
+    else:
+        return Response({
+            "success": False,
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
+    request=LoginSerializer,
+    examples=[
+        OpenApiExample(
+            "Login Example",
+            value={
+                "phoneNumber": "+919876543210",
+                "password": "SecurePassword123"
+            },
+            request_only=True
+        )
+    ]
+)
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def login(request):
+    """
+    Login with phone number and password.
+    Returns: JWT tokens and user data
+    """
+    serializer = LoginSerializer(data=request.data)
+    if serializer.is_valid():
+        return Response({
+            "message": "Login successful",
+            "success": True,
+            "data": serializer.validated_data
+        }, status=status.HTTP_200_OK)
+    else:
+        return Response({
+            "success": False,
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 
