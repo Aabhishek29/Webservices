@@ -183,7 +183,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class OrderAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Addresses
-        fields = ['addressId', 'street', 'city', 'state', 'zipCode', 'country']
+        fields = ['addressId', 'streetAddress', 'city', 'state', 'postalCode', 'country']
 
 
 class OrderSerializer(serializers.ModelSerializer):
