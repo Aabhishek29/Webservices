@@ -32,8 +32,12 @@ ALLOWED_HOSTS = ["*"]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8081",  # for React Native web
+    "http://localhost:3000",  # for React development
+    "http://3.110.46.10",     # EC2 instance IP
+    "http://venusa.co.in",
     "https://venusa.co.in",
-    # "http://www.venusa.co.in/"
+    "http://www.venusa.co.in",
+    "https://www.venusa.co.in",
 ]
 
 
