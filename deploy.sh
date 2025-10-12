@@ -6,11 +6,10 @@
 # ===================================
 # SERVER CONFIGURATION
 # ===================================
-# UPDATE THESE VALUES WITH YOUR SERVER DETAILS
-SERVER_USER="ubuntu"  # Change this to your server username
-SERVER_HOST="your-server-ip-or-domain"  # Change this to your server IP or domain
+SERVER_USER="ubuntu"
+SERVER_HOST="3.110.46.10"
 PEM_FILE="docker-server.pem"
-PROJECT_PATH="/home/ubuntu/Webservices"  # Change this to your project path on server
+PROJECT_PATH="/home/ubuntu/Webservices"
 
 # ===================================
 # COLORS FOR OUTPUT
@@ -115,10 +114,27 @@ else
 fi
 echo ""
 
-# Step 6: Restart Docker services
-echo -e "${YELLOW}[6/6] Restarting Docker services...${NC}"
+# Step 6: Clear Python cache
+echo -e "${YELLOW}[6/8] Clearing Python cache...${NC}"
+find . -type f -name "*.pyc" -delete
+find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+echo -e "${GREEN}✓ Python cache cleared${NC}"
+echo ""
+
+# Step 7: Rebuild and restart Docker services
+echo -e "${YELLOW}[7/8] Rebuilding Docker images...${NC}"
+docker-compose build --no-cache web
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✓ Docker image rebuilt successfully${NC}"
+else
+    echo -e "${RED}✗ Failed to rebuild Docker image${NC}"
+    exit 1
+fi
+echo ""
+
+echo -e "${YELLOW}Recreating Docker containers...${NC}"
 docker-compose down
-docker-compose up -d --build
+docker-compose up -d
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ Docker services restarted${NC}"
 else
@@ -127,27 +143,55 @@ else
 fi
 echo ""
 
+# Wait for containers to be healthy
+echo -e "${YELLOW}Waiting for containers to be healthy (10 seconds)...${NC}"
+sleep 10
+echo ""
+
+# Step 8: Health check
+echo -e "${YELLOW}[8/8] Running health checks...${NC}"
+echo ""
+
 # Check container status
-echo -e "${YELLOW}Checking container status...${NC}"
+echo -e "${YELLOW}Container Status:${NC}"
 docker-compose ps
+echo ""
+
+# Test API endpoints
+echo -e "${YELLOW}API Health Checks:${NC}"
+ADMIN_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/admin/login/)
+DASHBOARD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/categories/dashboard)
+
+if [ "$ADMIN_STATUS" == "200" ]; then
+    echo -e "${GREEN}✓ Admin page: $ADMIN_STATUS${NC}"
+else
+    echo -e "${RED}✗ Admin page: $ADMIN_STATUS${NC}"
+fi
+
+if [ "$DASHBOARD_STATUS" == "200" ]; then
+    echo -e "${GREEN}✓ Dashboard API: $DASHBOARD_STATUS${NC}"
+else
+    echo -e "${RED}✗ Dashboard API: $DASHBOARD_STATUS${NC}"
+fi
 echo ""
 
 # Show recent logs
 echo -e "${YELLOW}Recent application logs:${NC}"
-docker-compose logs --tail=20 web
+docker-compose logs --tail=30 web
 echo ""
 
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}   Deployment Completed Successfully!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
-echo -e "${BLUE}New features deployed:${NC}"
-echo -e "  • OTP-based phone verification"
-echo -e "  • Complete signup API with encrypted passwords"
-echo -e "  • Login API with authentication"
-echo -e "  • JWT token generation"
+echo -e "${BLUE}Latest features deployed:${NC}"
+echo -e "  • Dashboard API with top 3 products from subcategories"
+echo -e "  • Fixed SubCategoriesModel .id attribute error"
+echo -e "  • Improved serializers for better ForeignKey handling"
+echo -e "  • Authentication APIs (OTP, Signup, Login)"
 echo ""
-echo -e "${YELLOW}Test the APIs at:${NC}"
+echo -e "${YELLOW}Test the APIs at http://3.110.46.10:${NC}"
+echo -e "  • GET  /api/categories/dashboard"
 echo -e "  • POST /apis/auth/send-otp/"
 echo -e "  • POST /apis/auth/verify-otp/"
 echo -e "  • POST /apis/auth/signup/"
