@@ -1,5 +1,4 @@
 from rest_framework.permissions import AllowAny
-
 from categories.models import (
     Products, ProductTag, ProductImage, ProductFeature,
     ProductMaterial, ProductStockModel, SubCategoriesModel, CategoriesModel
@@ -7,9 +6,8 @@ from categories.models import (
 from rest_framework.decorators import (
     api_view, authentication_classes, permission_classes
 )
-import random
 from django.http import JsonResponse
-from collections import defaultdict
+from django.db.models import Prefetch
 
 
 @api_view(['GET'])
@@ -17,111 +15,130 @@ from collections import defaultdict
 @permission_classes([AllowAny])
 def dashboardHome(request):
     """
-    Dashboard API: Returns top 3 products from different subcategories across all categories
+    Dashboard API: Returns top 3 products from different subcategories across all categories.
+    Products are ordered by totalSales (highest first) within each subcategory.
     """
-    if request.method == "GET":
-        try:
-            # Get all active categories
-            categories = CategoriesModel.objects.all()
+    try:
+        # Get all categories with their subcategories and products in one optimized query
+        categories = CategoriesModel.objects.prefetch_related(
+            'subcategories',
+            'subcategories__products'
+        ).all()
 
-            if not categories.exists():
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'No categories found',
-                    'data': []
-                }, status=404)
+        if not categories.exists():
+            return JsonResponse({
+                'status': 'error',
+                'message': 'No categories found',
+                'data': []
+            }, status=404)
 
-            # Group products by subcategory
-            products_by_subcategory = {}
-            all_subcategories = SubCategoriesModel.objects.all()
+        # Build response data
+        response_data = []
 
-            for subcategory in all_subcategories:
-                # Get top 3 products by totalSales for each subcategory
+        for category in categories:
+            category_data = {
+                'categoryId': str(category.categoryId),
+                'categoryName': category.name,
+                'categoryImage': category.image.url if category.image else None,
+                'subcategories': []
+            }
+
+            # Get subcategories for this category
+            subcategories = category.subcategories.all()
+
+            for subcategory in subcategories:
+                # Get top 3 products by totalSales for this subcategory
                 top_products = Products.objects.filter(
                     subCategories=subcategory,
                     isActive=True
+                ).select_related('subCategories').prefetch_related(
+                    'images',
+                    'tags',
+                    'materials',
+                    'keyFeatures',
+                    'stocks'
                 ).order_by('-totalSales', '-createdAt')[:3]
 
-                if top_products.exists():
-                    products_by_subcategory[subcategory] = list(top_products)
+                if not top_products.exists():
+                    continue
 
-            # Prepare response data grouped by categories
-            categories_data = []
-
-            for category in categories:
-                # Get subcategories for this category
-                subcategories = category.subcategories.all()
-
-                category_products = []
-                for subcategory in subcategories:
-                    if subcategory in products_by_subcategory:
-                        # Serialize products for this subcategory
-                        for product in products_by_subcategory[subcategory]:
-                            # Get related data
-                            images = ProductImage.objects.filter(product=product)
-                            tags = ProductTag.objects.filter(product=product)
-                            materials = ProductMaterial.objects.filter(product=product)
-                            features = ProductFeature.objects.filter(product=product)
-                            stocks = ProductStockModel.objects.filter(product=product)
-
-                            product_dict = {
-                                'productId': str(product.productId),
-                                'productName': product.productName,
-                                'description': product.description,
-                                'price': str(product.price),
-                                'SKU': product.SKU,
-                                'subCategoryId': str(product.subCategories.subCategoryId),
-                                'subCategoryName': product.subCategories.name,
-                                'discount': str(product.discount),
-                                'discountPerc': str(product.discountPerc),
-                                'discountedPrice': str(product.discounted_price),
-                                'totalSales': product.totalSales,
-                                'totalStock': product.total_stock,
-                                'isActive': product.isActive,
-                                'createdAt': product.createdAt.isoformat(),
-                                'updatedAt': product.updatedAt.isoformat(),
-                                'images': [{'id': img.id, 'image': img.image.url if img.image else None} for img in images],
-                                'tags': [tag.tag for tag in tags],
-                                'materials': [material.material for material in materials],
-                                'keyFeatures': [feature.feature for feature in features],
-                                'stocks': [{
-                                    'size': stock.size,
-                                    'quantity': stock.quantity,
-                                    'color': stock.color
-                                } for stock in stocks]
+                # Serialize products for this subcategory
+                products_list = []
+                for product in top_products:
+                    product_data = {
+                        'productId': str(product.productId),
+                        'productName': product.productName,
+                        'description': product.description,
+                        'price': str(product.price),
+                        'SKU': product.SKU,
+                        'discount': str(product.discount),
+                        'discountPerc': str(product.discountPerc),
+                        'discountedPrice': str(product.discounted_price),
+                        'totalSales': product.totalSales,
+                        'totalStock': product.total_stock,
+                        'isActive': product.isActive,
+                        'createdAt': product.createdAt.isoformat() if product.createdAt else None,
+                        'updatedAt': product.updatedAt.isoformat() if product.updatedAt else None,
+                        'images': [
+                            {
+                                'id': img.pk,  # Use pk instead of id
+                                'image': img.image.url if img.image else None
                             }
-                            category_products.append(product_dict)
+                            for img in product.images.all()
+                        ],
+                        'tags': [tag.tag for tag in product.tags.all()],
+                        'materials': [material.material for material in product.materials.all()],
+                        'keyFeatures': [feature.feature for feature in product.keyFeatures.all()],
+                        'stocks': [
+                            {
+                                'size': stock.size,
+                                'quantity': stock.quantity,
+                                'color': stock.color
+                            }
+                            for stock in product.stocks.all()
+                        ]
+                    }
+                    products_list.append(product_data)
 
-                # Only add category if it has products
-                if category_products:
-                    categories_data.append({
-                        'categoryId': str(category.categoryId),
-                        'categoryName': category.name,
-                        'categoryImage': category.image.url if category.image else None,
-                        'products': category_products
-                    })
+                # Add subcategory with its products
+                subcategory_data = {
+                    'subCategoryId': str(subcategory.subCategoryId),
+                    'subCategoryName': subcategory.name,
+                    'collectionName': subcategory.collectionName,
+                    'products': products_list
+                }
+                category_data['subcategories'].append(subcategory_data)
 
-            # Calculate total products
-            total_products = sum(len(cat['products']) for cat in categories_data)
+            # Only include categories that have subcategories with products
+            if category_data['subcategories']:
+                response_data.append(category_data)
 
-            return JsonResponse({
-                'status': 'success',
-                'message': f'Successfully retrieved top 3 products from different subcategories',
-                'totalCategories': len(categories_data),
-                'totalProducts': total_products,
-                'data': categories_data
-            }, status=200)
+        # Calculate totals
+        total_categories = len(response_data)
+        total_subcategories = sum(len(cat['subcategories']) for cat in response_data)
+        total_products = sum(
+            len(subcat['products'])
+            for cat in response_data
+            for subcat in cat['subcategories']
+        )
 
-        except Exception as e:
-            return JsonResponse({
-                'status': 'error',
-                'message': f'An error occurred: {str(e)}',
-                'data': []
-            }, status=500)
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Successfully retrieved top 3 products from different subcategories',
+            'totalCategories': total_categories,
+            'totalSubcategories': total_subcategories,
+            'totalProducts': total_products,
+            'data': response_data
+        }, status=200)
 
-    else:
+    except Exception as e:
+        # Log the full error for debugging
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Dashboard API Error: {error_trace}")
+
         return JsonResponse({
             'status': 'error',
-            'message': 'Only GET method is allowed',
+            'message': f'An error occurred: {str(e)}',
             'data': []
-        }, status=405)
+        }, status=500)
