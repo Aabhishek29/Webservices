@@ -24,7 +24,7 @@ def dashboardHome(request):
             'subcategories',
             'subcategories__products'
         ).all()
-
+        print("Fetched categories:", categories)
         if not categories.exists():
             return JsonResponse({
                 'status': 'error',
@@ -34,8 +34,9 @@ def dashboardHome(request):
 
         # Build response data
         response_data = []
-
+        print("Building response data...")
         for category in categories:
+            print(f"Processing category: {category.name}")
             category_data = {
                 'categoryId': str(category.categoryId),
                 'categoryName': category.name,
@@ -45,7 +46,7 @@ def dashboardHome(request):
 
             # Get subcategories for this category
             subcategories = category.subcategories.all()
-
+            print(f"Found {len(subcategories)} subcategories for category {category.name}")
             for subcategory in subcategories:
                 # Get top 3 products by totalSales for this subcategory
                 top_products = Products.objects.filter(
@@ -61,7 +62,7 @@ def dashboardHome(request):
 
                 if not top_products.exists():
                     continue
-
+                print(f"Top products for subcategory {subcategory.name}: {[p.productName for p in top_products]}")
                 # Serialize products for this subcategory
                 products_list = []
                 for product in top_products:
@@ -99,7 +100,7 @@ def dashboardHome(request):
                         ]
                     }
                     products_list.append(product_data)
-
+                print(f"Serialized products for subcategory {subcategory.name}: {products_list}")
                 # Add subcategory with its products
                 subcategory_data = {
                     'subCategoryId': str(subcategory.subCategoryId),
@@ -107,6 +108,7 @@ def dashboardHome(request):
                     'collectionName': subcategory.collectionName,
                     'products': products_list
                 }
+                print(f"Adding subcategory data for {subcategory.name}: {subcategory_data}")
                 category_data['subcategories'].append(subcategory_data)
 
             # Only include categories that have subcategories with products
@@ -121,7 +123,7 @@ def dashboardHome(request):
             for cat in response_data
             for subcat in cat['subcategories']
         )
-
+        print(f"Totals - Categories: {total_categories}, Subcategories: {total_subcategories}, Products: {total_products}")
         return JsonResponse({
             'status': 'success',
             'message': 'Successfully retrieved top 3 products from different subcategories',
@@ -133,6 +135,7 @@ def dashboardHome(request):
 
     except Exception as e:
         # Log the full error for debugging
+        print(f"Dashboard API Error: {str(e)}")
         import traceback
         error_trace = traceback.format_exc()
         print(f"Dashboard API Error: {error_trace}")
