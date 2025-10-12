@@ -335,7 +335,7 @@ def remove_from_cart(request, user_id, item_id):
             id=item_id,
             cart__user=user
         )
-        product_name = cart_item.product.name
+        product_name = cart_item.product.productName
         cart_item.delete()
 
         return Response({

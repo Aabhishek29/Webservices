@@ -309,7 +309,7 @@ class PaymentVerificationSerializer(serializers.Serializer):
 # ============ ORDER HISTORY SERIALIZERS ============
 
 class OrderStatusHistorySerializer(serializers.ModelSerializer):
-    created_by_name = serializers.CharField(source='createdBy.username', read_only=True, allow_null=True)
+    created_by_name = serializers.CharField(source='createdBy.phoneNumber', read_only=True, allow_null=True)
 
     class Meta:
         model = OrderStatusHistory
