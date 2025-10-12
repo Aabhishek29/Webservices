@@ -209,6 +209,8 @@ def add_to_cart(request):
         user_id = serializer.validated_data['user_id']
         product_id = serializer.validated_data['product_id']
         quantity = serializer.validated_data['quantity']
+        size = serializer.validated_data['size']
+        color = serializer.validated_data['color']
 
         user = get_user_by_id(user_id)
 
@@ -224,19 +226,21 @@ def add_to_cart(request):
                 product = get_object_or_404(Products, pk=product_id)
                 cart, created = Cart.objects.get_or_create(user=user)
 
-                # Check if item already exists in cart
+                # Check if item with same size and color already exists in cart
                 cart_item, item_created = CartItem.objects.get_or_create(
                     cart=cart,
                     product=product,
+                    size=size,
+                    color=color,
                     defaults={'quantity': quantity}
                 )
 
                 if not item_created:
                     cart_item.quantity += quantity
                     cart_item.save()
-                    message = f'Updated quantity to {cart_item.quantity}'
+                    message = f'Updated quantity to {cart_item.quantity} for size {size}, color {color}'
                 else:
-                    message = 'Item added to cart successfully'
+                    message = f'Item added to cart successfully (Size: {size}, Color: {color})'
 
                 # Return updated cart
                 cart_serializer = CartSerializer(cart)
@@ -562,6 +566,8 @@ def create_order(request):
                         order=order,
                         product=cart_item.product,
                         quantity=cart_item.quantity,
+                        size=cart_item.size,
+                        color=cart_item.color,
                         unitPrice=cart_item.product.price
                     )
                     total_amount += order_item.totalPrice

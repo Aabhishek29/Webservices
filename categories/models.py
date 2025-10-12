@@ -95,9 +95,26 @@ class Products(models.Model):
             return self.price * (1 - self.discountPerc / 100)
         return self.price
 
-    def has_stock(self, quantity=1):
-        """Check if product has enough stock"""
-        return self.total_stock >= quantity
+    def has_stock(self, quantity=1, size=None, color=None):
+        """Check if product has enough stock for specific size/color or total"""
+        if size is not None and color is not None:
+            # Check stock for specific variant
+            try:
+                stock_item = self.stocks.get(size=size, color=color)
+                return stock_item.quantity >= quantity
+            except:
+                return False
+        else:
+            # Check total stock across all variants
+            return self.total_stock >= quantity
+
+    def get_variant_stock(self, size, color):
+        """Get stock quantity for specific size/color variant"""
+        try:
+            stock_item = self.stocks.get(size=size, color=color)
+            return stock_item.quantity
+        except:
+            return 0
 
 
 class ProductImage(models.Model):

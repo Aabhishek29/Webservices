@@ -28,10 +28,12 @@ class WishlistProductSerializer(serializers.ModelSerializer):
 class WishlistSerializer(serializers.ModelSerializer):
     product = WishlistProductSerializer(read_only=True)
     product_id = serializers.UUIDField(write_only=True)
+    size = serializers.IntegerField(required=False, allow_null=True)
+    color = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = Wishlist
-        fields = ['wishlistId', 'product', 'product_id', 'createdAt']
+        fields = ['wishlistId', 'product', 'product_id', 'size', 'color', 'createdAt']
         read_only_fields = ['wishlistId', 'createdAt']
 
     def validate_product_id(self, value):
@@ -45,12 +47,15 @@ class WishlistSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         product_id = validated_data.pop('product_id')
         product = Products.objects.get(pk=product_id)
+        size = validated_data.get('size')
+        color = validated_data.get('color')
 
-        # Check if already in wishlist
-        if Wishlist.objects.filter(user=user, product=product).exists():
-            raise serializers.ValidationError("Product already in wishlist")
+        # Check if already in wishlist with same variant
+        existing_query = {'user': user, 'product': product, 'size': size, 'color': color}
+        if Wishlist.objects.filter(**existing_query).exists():
+            raise serializers.ValidationError("Product with this size and color already in wishlist")
 
-        return Wishlist.objects.create(user=user, product=product)
+        return Wishlist.objects.create(user=user, product=product, size=size, color=color)
 
 
 # ============ CART SERIALIZERS ============
@@ -85,11 +90,13 @@ class CartItemSerializer(serializers.ModelSerializer):
     product = CartItemProductSerializer(read_only=True)
     unit_price = serializers.DecimalField(source='product.price', max_digits=10, decimal_places=2, read_only=True)
     total_price = serializers.SerializerMethodField()
+    size = serializers.IntegerField()
+    color = serializers.CharField()
 
     class Meta:
         model = CartItem
         fields = [
-            'id', 'product', 'quantity', 'unit_price',
+            'id', 'product', 'quantity', 'size', 'color', 'unit_price',
             'total_price', 'addedAt', 'updatedAt'
         ]
         read_only_fields = ['id', 'addedAt', 'updatedAt']
@@ -126,6 +133,8 @@ class AddToCartSerializer(serializers.Serializer):
     user_id = serializers.UUIDField()
     product_id = serializers.UUIDField()
     quantity = serializers.IntegerField(min_value=1, max_value=999, default=1)
+    size = serializers.IntegerField(required=True)
+    color = serializers.CharField(required=True, max_length=50)
 
     def validate_user_id(self, value):
         try:
@@ -145,9 +154,15 @@ class AddToCartSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         product = Products.objects.get(pk=attrs['product_id'])
-        if not product.has_stock(attrs['quantity']):
+        size = attrs.get('size')
+        color = attrs.get('color')
+        quantity = attrs['quantity']
+
+        # Check stock for specific size/color variant
+        if not product.has_stock(quantity, size=size, color=color):
+            available_stock = product.get_variant_stock(size, color)
             raise serializers.ValidationError(
-                f"Only {product.total_stock} items available in stock."
+                f"Only {available_stock} items available in stock for size {size} and color {color}."
             )
         return attrs
 
@@ -158,9 +173,12 @@ class UpdateCartItemSerializer(serializers.Serializer):
     def validate_quantity(self, value):
         if hasattr(self, 'instance') and self.instance:
             product = self.instance.product
-            if not product.has_stock(value):
+            size = self.instance.size
+            color = self.instance.color
+            if not product.has_stock(value, size=size, color=color):
+                available_stock = product.get_variant_stock(size, color)
                 raise serializers.ValidationError(
-                    f"Only {product.total_stock} items available in stock."
+                    f"Only {available_stock} items available in stock for size {size} and color {color}."
                 )
         return value
 
@@ -174,7 +192,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = [
-            'id', 'product_id', 'product_name', 'quantity',
+            'id', 'product_id', 'product_name', 'quantity', 'size', 'color',
             'unitPrice', 'totalPrice', 'productSku'
         ]
         read_only_fields = ['id', 'unitPrice', 'totalPrice', 'productSku']

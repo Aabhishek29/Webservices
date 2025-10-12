@@ -42,13 +42,16 @@ class CartItem(models.Model):
         default=1,
         validators=[MinValueValidator(1), MaxValueValidator(999)]
     )
+    # Product variant information
+    size = models.IntegerField(blank=False, null=False, default=0)
+    color = models.CharField(max_length=50, blank=False, null=False, default='Not Specified')
     # Price snapshot - store price when added to cart
     price_at_addition = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     addedAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('cart', 'product')
+        unique_together = ('cart', 'product', 'size', 'color')
         db_table = 'cart_items'
         verbose_name = 'Cart Item'
         verbose_name_plural = 'Cart Items'
@@ -61,7 +64,7 @@ class CartItem(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.product.productName} x {self.quantity}"
+        return f"{self.product.productName} (Size: {self.size}, Color: {self.color}) x {self.quantity}"
 
     @property
     def total_price(self):
@@ -78,17 +81,21 @@ class Wishlist(models.Model):
     wishlistId = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='wishlists')
     product = models.ForeignKey(Products, on_delete=models.CASCADE, related_name='wishlist_items')
+    # Product variant information (optional for wishlist - user may not have decided yet)
+    size = models.IntegerField(blank=True, null=True)
+    color = models.CharField(max_length=50, blank=True, null=True)
     createdAt = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'product')
+        unique_together = ('user', 'product', 'size', 'color')
         db_table = 'wishlists'
         verbose_name = 'Wishlist'
         verbose_name_plural = 'Wishlists'
         ordering = ['-createdAt']
 
     def __str__(self):
-        return f'{self.user} - {self.product.productName}'
+        variant_info = f" (Size: {self.size}, Color: {self.color})" if self.size and self.color else ""
+        return f'{self.user} - {self.product.productName}{variant_info}'
 
 
 ORDER_STATUS_CHOICES = (
@@ -205,6 +212,10 @@ class OrderItem(models.Model):
     unitPrice = models.DecimalField(max_digits=10, decimal_places=2)
     totalPrice = models.DecimalField(max_digits=12, decimal_places=2)
 
+    # Product variant information
+    size = models.IntegerField(blank=False, null=False, default=0)
+    color = models.CharField(max_length=50, blank=False, null=False, default='Not Specified')
+
     # Product snapshot for historical data
     productName = models.CharField(max_length=255)
     productSku = models.CharField(max_length=100, blank=True, null=True)
@@ -226,7 +237,7 @@ class OrderItem(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.productName} x {self.quantity}"
+        return f"{self.productName} (Size: {self.size}, Color: {self.color}) x {self.quantity}"
 
 
 TRANSACTION_STATUS_CHOICES = (
