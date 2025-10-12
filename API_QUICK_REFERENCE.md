@@ -57,6 +57,7 @@ Content-Type: application/json
 ```
 **Returns:** JWT tokens + user data
 
+
 ### 4. Login (Existing Users Only)
 ```http
 POST /apis/auth/login/

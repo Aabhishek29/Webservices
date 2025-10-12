@@ -1,6 +1,9 @@
 from rest_framework.permissions import AllowAny
 
-from categories.models import Products, ProductTag, ProductImage, ProductFeature, ProductMaterial, ProductStockModel
+from categories.models import (
+    Products, ProductTag, ProductImage, ProductFeature,
+    ProductMaterial, ProductStockModel, SubCategoriesModel, CategoriesModel
+)
 from rest_framework.decorators import (
     api_view, authentication_classes, permission_classes
 )
@@ -9,107 +12,104 @@ from django.http import JsonResponse
 from collections import defaultdict
 
 
-@api_view(['POST', 'GET'])
-# @permission_classes([IsAuthenticated])
+@api_view(['GET'])
 @authentication_classes([])
 @permission_classes([AllowAny])
 def dashboardHome(request):
+    """
+    Dashboard API: Returns top 3 products from different subcategories across all categories
+    """
     if request.method == "GET":
         try:
-            # Get latest 50 products ordered by creation date (most recent first)
-            products = Products.objects.filter(isActive=True).order_by('-createdAt')[:50]
+            # Get all active categories
+            categories = CategoriesModel.objects.all()
 
-            if not products:
+            if not categories.exists():
                 return JsonResponse({
                     'status': 'error',
-                    'message': 'No products found',
+                    'message': 'No categories found',
                     'data': []
                 }, status=404)
 
-            # Group products by tags
-            products_by_tag = defaultdict(list)
+            # Group products by subcategory
+            products_by_subcategory = {}
+            all_subcategories = SubCategoriesModel.objects.all()
 
-            for product in products:
-                # Get all tags for this product
-                product_tags = ProductTag.objects.filter(product=product)
+            for subcategory in all_subcategories:
+                # Get top 3 products by totalSales for each subcategory
+                top_products = Products.objects.filter(
+                    subCategories=subcategory,
+                    isActive=True
+                ).order_by('-totalSales', '-createdAt')[:3]
 
-                if product_tags.exists():
-                    # Add product to each tag group
-                    for tag_obj in product_tags:
-                        products_by_tag[tag_obj.tag].append(product)
-                else:
-                    # If product has no tags, add to 'untagged' group
-                    products_by_tag['untagged'].append(product)
+                if top_products.exists():
+                    products_by_subcategory[subcategory] = list(top_products)
 
-            # Randomly select 10 products ensuring variety across tags
-            selected_products = []
-            available_products = list(products)
+            # Prepare response data grouped by categories
+            categories_data = []
 
-            # If we have tagged products, try to get variety
-            if products_by_tag:
-                tag_keys = list(products_by_tag.keys())
-                random.shuffle(tag_keys)
+            for category in categories:
+                # Get subcategories for this category
+                subcategories = category.subcategories.all()
 
-                # Try to pick products from different tags
-                for tag in tag_keys:
-                    if len(selected_products) >= 10:
-                        break
+                category_products = []
+                for subcategory in subcategories:
+                    if subcategory in products_by_subcategory:
+                        # Serialize products for this subcategory
+                        for product in products_by_subcategory[subcategory]:
+                            # Get related data
+                            images = ProductImage.objects.filter(product=product)
+                            tags = ProductTag.objects.filter(product=product)
+                            materials = ProductMaterial.objects.filter(product=product)
+                            features = ProductFeature.objects.filter(product=product)
+                            stocks = ProductStockModel.objects.filter(product=product)
 
-                    tag_products = products_by_tag[tag]
-                    # Remove already selected products from this tag
-                    tag_products = [p for p in tag_products if p not in selected_products]
+                            product_dict = {
+                                'productId': str(product.productId),
+                                'productName': product.productName,
+                                'description': product.description,
+                                'price': str(product.price),
+                                'SKU': product.SKU,
+                                'subCategoryId': str(product.subCategories.subCategoryId),
+                                'subCategoryName': product.subCategories.name,
+                                'discount': str(product.discount),
+                                'discountPerc': str(product.discountPerc),
+                                'discountedPrice': str(product.discounted_price),
+                                'totalSales': product.totalSales,
+                                'totalStock': product.total_stock,
+                                'isActive': product.isActive,
+                                'createdAt': product.createdAt.isoformat(),
+                                'updatedAt': product.updatedAt.isoformat(),
+                                'images': [{'id': img.id, 'image': img.image.url if img.image else None} for img in images],
+                                'tags': [tag.tag for tag in tags],
+                                'materials': [material.material for material in materials],
+                                'keyFeatures': [feature.feature for feature in features],
+                                'stocks': [{
+                                    'size': stock.size,
+                                    'quantity': stock.quantity,
+                                    'color': stock.color
+                                } for stock in stocks]
+                            }
+                            category_products.append(product_dict)
 
-                    if tag_products:
-                        selected_product = random.choice(tag_products)
-                        selected_products.append(selected_product)
+                # Only add category if it has products
+                if category_products:
+                    categories_data.append({
+                        'categoryId': str(category.categoryId),
+                        'categoryName': category.name,
+                        'categoryImage': category.image.url if category.image else None,
+                        'products': category_products
+                    })
 
-            # If we still need more products, randomly select from remaining
-            remaining_products = [p for p in available_products if p not in selected_products]
-            while len(selected_products) < 10 and remaining_products:
-                selected_product = random.choice(remaining_products)
-                selected_products.append(selected_product)
-                remaining_products.remove(selected_product)
-
-            # Serialize the selected products with related data
-            products_data = []
-            for product in selected_products:
-                # Get related data
-                images = ProductImage.objects.filter(product=product)
-                tags = ProductTag.objects.filter(product=product)
-                materials = ProductMaterial.objects.filter(product=product)
-                features = ProductFeature.objects.filter(product=product)
-                stocks = ProductStockModel.objects.filter(product=product)
-
-                product_dict = {
-                    'productId': str(product.productId),
-                    'productName': product.productName,
-                    'description': product.description,
-                    'price': str(product.price),
-                    'SKU': product.SKU,
-                    'subCategories': product.subCategories.id if product.subCategories else None,
-                    'discount': str(product.discount),
-                    'discountPerc': str(product.discountPerc),
-                    'totalSales': product.totalSales,
-                    'isActive': product.isActive,
-                    'createdAt': product.createdAt.isoformat(),
-                    'updatedAt': product.updatedAt.isoformat(),
-                    'images': [{'id': img.id, 'image': img.image.url if img.image else None} for img in images],
-                    'tags': [tag.tag for tag in tags],
-                    'materials': [material.material for material in materials],
-                    'keyFeatures': [feature.feature for feature in features],
-                    'stocks': [{
-                        'size': stock.size,
-                        'quantity': stock.quantity,
-                        'color': stock.color
-                    } for stock in stocks]
-                }
-                products_data.append(product_dict)
+            # Calculate total products
+            total_products = sum(len(cat['products']) for cat in categories_data)
 
             return JsonResponse({
                 'status': 'success',
-                'message': f'Successfully retrieved {len(products_data)} random products',
-                'total_available': len(products),
-                'data': products_data
+                'message': f'Successfully retrieved top 3 products from different subcategories',
+                'totalCategories': len(categories_data),
+                'totalProducts': total_products,
+                'data': categories_data
             }, status=200)
 
         except Exception as e:
@@ -122,6 +122,6 @@ def dashboardHome(request):
     else:
         return JsonResponse({
             'status': 'error',
-            'message': 'Only POST method is allowed',
+            'message': 'Only GET method is allowed',
             'data': []
         }, status=405)
