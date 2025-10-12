@@ -127,6 +127,7 @@ def dashboardHome(request):
         return JsonResponse({
             'status': 'success',
             'message': 'Successfully retrieved top 3 products from different subcategories',
+            'dashboard_video': 'https://venusa.s3.ap-south-1.amazonaws.com/venusa/dashboard_content/C0021_3.mp4',
             'totalCategories': total_categories,
             'totalSubcategories': total_subcategories,
             'totalProducts': total_products,
