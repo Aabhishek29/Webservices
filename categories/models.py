@@ -51,6 +51,11 @@ class SubCategoriesModel(models.Model):
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
 
+    @property
+    def id(self):
+        """Alias for subCategoryId to support legacy code"""
+        return self.subCategoryId
+
     def __str__(self):
         return self.name
 
