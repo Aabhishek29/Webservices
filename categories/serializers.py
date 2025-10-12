@@ -57,6 +57,11 @@ class ProductSerializer(serializers.ModelSerializer):
     materials = ProductMaterialSerializer(many=True, required=False)
     keyFeatures = ProductFeatureSerializer(many=True, required=False)
     stocks = ProductStockSerializer(many=True, required=False)
+    # Explicitly use subCategoryId instead of default 'id' lookup
+    subCategories = serializers.PrimaryKeyRelatedField(
+        queryset=SubCategoriesModel.objects.all(),
+        pk_field=serializers.UUIDField(format='hex_verbose')
+    )
 
     class Meta:
         model = Products
