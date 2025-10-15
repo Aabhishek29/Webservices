@@ -46,9 +46,6 @@ def category_list_create(request):
 def getSubCategorieById(request, categoryId):
     try:
         subCategory = SubCategoriesModel.objects.filter(categories=categoryId)
-        if not subCategory.exists():
-            return Response({'error': 'No subCategory found in this category'}, status=status.HTTP_404_NOT_FOUND)
-
         serializer = SubCategorySerializer(subCategory, many=True)
         return Response({
             "success": True,
