@@ -1,5 +1,5 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
@@ -7,8 +7,12 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
 from django.db.models import Q
+from django.conf import settings
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.openapi import OpenApiTypes
+import razorpay
+import hmac
+import hashlib
 
 from .models import Wishlist, Cart, CartItem, Order, OrderItem, Transaction, OrderStatusHistory
 from categories.models import Products
@@ -759,4 +763,197 @@ def transaction_history(request, user_id):
     return paginator.get_paginated_response({
         'success': True,
         'data': serializer.data
+    })
+
+
+# ============ PAYMENT VIEWS (RAZORPAY) ============
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_razorpay_order(request):
+    """
+    Create a Razorpay order for payment
+    Expected payload: { "amount": 50000, "order_id": "uuid" }
+    Amount should be in paise (multiply rupees by 100)
+    """
+    try:
+        amount = request.data.get('amount')
+        order_id = request.data.get('order_id')
+
+        if not amount or not order_id:
+            return Response({
+                'success': False,
+                'message': 'Amount and order_id are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get order to verify ownership
+        try:
+            order = Order.objects.get(orderId=order_id)
+            if order.user != request.user and not request.user.is_staff:
+                return Response({
+                    'success': False,
+                    'message': 'Permission denied'
+                }, status=status.HTTP_403_FORBIDDEN)
+        except Order.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'Order not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Initialize Razorpay client
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+        # Create Razorpay order
+        razorpay_order = client.order.create({
+            'amount': int(amount),  # Amount in paise
+            'currency': 'INR',
+            'receipt': str(order_id),
+            'notes': {
+                'order_id': str(order_id),
+                'user_id': str(request.user.userId)
+            }
+        })
+
+        # Update order with Razorpay order ID
+        order.razorpay_order_id = razorpay_order['id']
+        order.save()
+
+        return Response({
+            'success': True,
+            'data': {
+                'razorpay_order_id': razorpay_order['id'],
+                'amount': razorpay_order['amount'],
+                'currency': razorpay_order['currency'],
+                'key_id': settings.RAZORPAY_KEY_ID
+            }
+        })
+
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verify_razorpay_payment(request):
+    """
+    Verify Razorpay payment signature
+    Expected payload: {
+        "razorpay_order_id": "order_xxx",
+        "razorpay_payment_id": "pay_xxx",
+        "razorpay_signature": "signature_xxx",
+        "order_id": "uuid"
+    }
+    """
+    try:
+        razorpay_order_id = request.data.get('razorpay_order_id')
+        razorpay_payment_id = request.data.get('razorpay_payment_id')
+        razorpay_signature = request.data.get('razorpay_signature')
+        order_id = request.data.get('order_id')
+
+        if not all([razorpay_order_id, razorpay_payment_id, razorpay_signature, order_id]):
+            return Response({
+                'success': False,
+                'message': 'Missing required payment details'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get order
+        try:
+            order = Order.objects.get(orderId=order_id)
+            if order.user != request.user and not request.user.is_staff:
+                return Response({
+                    'success': False,
+                    'message': 'Permission denied'
+                }, status=status.HTTP_403_FORBIDDEN)
+        except Order.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'Order not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Verify signature
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+        try:
+            params_dict = {
+                'razorpay_order_id': razorpay_order_id,
+                'razorpay_payment_id': razorpay_payment_id,
+                'razorpay_signature': razorpay_signature
+            }
+            client.utility.verify_payment_signature(params_dict)
+
+            # Signature is valid, update order and create transaction
+            with transaction.atomic():
+                order.paymentStatus = 'PAID'
+                order.status = 'CONFIRMED'
+                order.save()
+
+                # Create transaction record
+                txn = Transaction.objects.create(
+                    user=order.user,
+                    order=order,
+                    razorpay_order_id=razorpay_order_id,
+                    razorpay_payment_id=razorpay_payment_id,
+                    razorpay_signature=razorpay_signature,
+                    status='SUCCESS',
+                    amount=order.totalAmount,
+                    currency='INR'
+                )
+
+                # Create status history
+                OrderStatusHistory.objects.create(
+                    order=order,
+                    status='CONFIRMED',
+                    notes='Payment confirmed via Razorpay',
+                    createdBy=request.user
+                )
+
+            return Response({
+                'success': True,
+                'message': 'Payment verified successfully',
+                'data': {
+                    'transaction_id': str(txn.transactionId),
+                    'order_status': order.status,
+                    'payment_status': order.paymentStatus
+                }
+            })
+
+        except razorpay.errors.SignatureVerificationError:
+            # Signature verification failed
+            order.paymentStatus = 'FAILED'
+            order.save()
+
+            # Create failed transaction record
+            Transaction.objects.create(
+                user=order.user,
+                order=order,
+                razorpay_order_id=razorpay_order_id,
+                razorpay_payment_id=razorpay_payment_id,
+                razorpay_signature=razorpay_signature,
+                status='FAILED',
+                amount=order.totalAmount,
+                currency='INR'
+            )
+
+            return Response({
+                'success': False,
+                'message': 'Payment verification failed. Signature mismatch.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_razorpay_key(request):
+    """Get Razorpay public key for frontend"""
+    return Response({
+        'success': True,
+        'key_id': settings.RAZORPAY_KEY_ID
     })

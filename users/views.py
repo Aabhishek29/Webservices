@@ -218,6 +218,100 @@ def add_address(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_address(request):
+    """Create a new address for customer"""
+    try:
+        customer_id = request.data.get('customer')
+        if not customer_id:
+            return Response({
+                "success": False,
+                "message": "Customer ID is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get customer
+        try:
+            customer = Users.objects.get(userId=customer_id)
+        except Users.DoesNotExist:
+            return Response({
+                "success": False,
+                "message": "Customer not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Create address
+        address = Addresses.objects.create(
+            user=customer,
+            locationName=request.data.get('location_name', 'Home'),
+            streetAddress=request.data.get('street_address', ''),
+            city=request.data.get('city', ''),
+            state=request.data.get('state', ''),
+            postalCode=request.data.get('postal_code', ''),
+            country=request.data.get('country', 'India')
+        )
+
+        return Response({
+            "success": True,
+            "message": "Address created successfully",
+            "address": {
+                "_id": str(address.addressId),
+                "customer": str(address.user.userId),
+                "street_address": address.streetAddress,
+                "city": address.city,
+                "state": address.state,
+                "postal_code": address.postalCode,
+                "country": address.country,
+                "location_name": address.locationName
+            }
+        }, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({
+            "success": False,
+            "message": str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_customer_addresses(request, customer_id):
+    """Get all addresses for a customer"""
+    try:
+        # Get customer
+        try:
+            customer = Users.objects.get(userId=customer_id)
+        except Users.DoesNotExist:
+            return Response({
+                "success": False,
+                "message": "Customer not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Get addresses
+        addresses = Addresses.objects.filter(user=customer).order_by('-createdAt')
+
+        address_list = [{
+            "_id": str(addr.addressId),
+            "customer": str(addr.user.userId),
+            "street_address": addr.streetAddress,
+            "city": addr.city,
+            "state": addr.state,
+            "postal_code": addr.postalCode,
+            "country": addr.country,
+            "location_name": addr.locationName,
+            "mobile_number": addr.user.phoneNumber,
+            "alternate_mobile_number": ""
+        } for addr in addresses]
+
+        return Response({
+            "success": True,
+            "addresses": address_list
+        })
+    except Exception as e:
+        return Response({
+            "success": False,
+            "message": str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
 def create_subscriber(request):

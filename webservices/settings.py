@@ -223,3 +223,8 @@ EMAIL_USE_SSL = True
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
+# Razorpay Payment Gateway Settings
+RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='rzp_test_EqSp950wLrSSjT')
+RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET', default='')
+
+

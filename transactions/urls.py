@@ -25,4 +25,9 @@ urlpatterns = [
 
     # ============ TRANSACTION URLs ============
     path('transactions/<uuid:user_id>/', views.transaction_history, name='transaction-history'),
+
+    # ============ PAYMENT URLs ============
+    path('payment/create-razorpay-order/', views.create_razorpay_order, name='create-razorpay-order'),
+    path('payment/verify-payment/', views.verify_razorpay_payment, name='verify-razorpay-payment'),
+    path('payment/razorpay-key/', views.get_razorpay_key, name='get-razorpay-key'),
 ]
