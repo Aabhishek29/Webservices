@@ -76,7 +76,8 @@ def send_otp(request):
 def verify_otp(request):
     """
     Verify OTP sent to phone number.
-    After verification, user can proceed to complete signup (if new user) or login (if existing user).
+    - For existing users: Returns JWT tokens and user data (auto-login)
+    - For new users: Returns is_new_user flag to proceed with signup
     """
     serializer = VerifyOTPSerializer(data=request.data)
     if serializer.is_valid():

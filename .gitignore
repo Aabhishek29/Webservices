@@ -5,13 +5,11 @@ __pycache__/
 *.pyd
 *.so
 
-# Django migrations
-**/migrations/
-!**/migrations/__init__.py
 
 # Django SQLite DB
 db.sqlite3
 *.sqlite3
+
 
 # Environment variables
 .env

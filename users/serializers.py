@@ -56,11 +56,26 @@ class VerifyOTPSerializer(serializers.Serializer):
         user.otp_created_at = None
         user.save()
 
-        return {
+        # Check if user is new or existing
+        is_new_user = not bool(user.password)
+
+        response_data = {
             "userId": str(user.userId),
             "phoneNumber": user.phoneNumber,
-            "is_new_user": not bool(user.password)  # If no password, user needs to complete signup
+            "is_new_user": is_new_user
         }
+
+        # If existing user (has password), auto-login by generating JWT tokens
+        if not is_new_user:
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+            response_data.update({
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": UserSerializer(user).data
+            })
+
+        return response_data
 
 
 class SignupSerializer(serializers.Serializer):
